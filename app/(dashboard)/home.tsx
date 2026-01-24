@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     View,
     Text,
@@ -6,86 +6,179 @@ import {
     Image,
     TouchableOpacity,
     FlatList,
+    Platform,
+    LayoutAnimation,
+    UIManager,
     Dimensions,
-    Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 
-// Data Import
-import { categories, gearItems } from "@/constants/gearData";
+// Service Imports
+import { getCategories, getGearByCategory, getTrendingGear } from '@/service/gearService';
+
+const { width } = Dimensions.get('window');
+
+// Enable Layout Animation
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const Home = () => {
     const router = useRouter();
-    const [activeCategoryId, setActiveCategoryId] = useState(1);
 
-    // Filter Logic
-    const filteredItems = useMemo(() => {
-        return gearItems.filter(item => item.categoryId === activeCategoryId);
-    }, [activeCategoryId]);
+    // --- STATE ---
+    const [activeCategoryId, setActiveCategoryId] = useState<number>(1);
+    const [activeBrand, setActiveBrand] = useState<string>("All");
+    const [categories, setCategories] = useState<any[]>([]);
+    const [trendingItems, setTrendingItems] = useState<any[]>([]);
+    const [categoryItems, setCategoryItems] = useState<any[]>([]);
+    const [loadingInitial, setLoadingInitial] = useState(true);
+    const [loadingCategory, setLoadingCategory] = useState(false);
 
-    // Trending Logic
-    const trendingItems = useMemo(() => {
-        return gearItems.filter(item => item.rating >= 4.8);
+    // --- DATA LOADING ---
+    useEffect(() => {
+        const loadBaseData = async () => {
+            try {
+                const [catsData, trendsData] = await Promise.all([
+                    getCategories(),
+                    getTrendingGear()
+                ]);
+                const sortedCats = catsData.sort((a: any, b: any) => a.id - b.id);
+                setCategories(sortedCats);
+                setTrendingItems(trendsData);
+
+                if (sortedCats.length > 0) {
+                    await loadCategoryItems(Number(sortedCats[0].id));
+                }
+            } catch (e) {
+                console.error("Failed to load home data", e);
+            } finally {
+                setLoadingInitial(false);
+            }
+        };
+        loadBaseData();
     }, []);
 
-    // --- COMPONENT: Airbnb Style Card (Vertical & Square) ---
+    const handleCategoryChange = async (catId: number) => {
+        if (catId === activeCategoryId) return;
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setActiveCategoryId(catId);
+        setActiveBrand("All");
+        await loadCategoryItems(catId);
+    };
+
+    const loadCategoryItems = async (catId: number) => {
+        setLoadingCategory(true);
+        const items = await getGearByCategory(catId);
+        setCategoryItems(items);
+        setLoadingCategory(false);
+    };
+
+    const availableBrands = useMemo(() => {
+        const brands = new Set(categoryItems.map(item => item.brand));
+        return ["All", ...Array.from(brands)];
+    }, [categoryItems]);
+
+    const filteredCategoryItems = useMemo(() => {
+        if (activeBrand === "All") return categoryItems;
+        return categoryItems.filter(item => item.brand === activeBrand);
+    }, [categoryItems, activeBrand]);
+
+    // --- COMPONENT: HERO BANNER (New Addition) ---
+    const PromoBanner = () => (
+        <View className="px-5 mb-6">
+            <View className="bg-slate-900 rounded-3xl p-5 flex-row items-center justify-between overflow-hidden relative h-[140px]">
+                {/* Decorative Circles */}
+                <View className="absolute -right-10 -top-10 w-40 h-40 bg-slate-800 rounded-full opacity-50" />
+                <View className="absolute right-10 bottom-0 w-20 h-20 bg-slate-700 rounded-full opacity-30" />
+
+                <View className="z-10 w-2/3">
+                    <View className="bg-orange-500 self-start px-2 py-1 rounded-md mb-2">
+                        <Text className="text-[10px] font-bold text-white uppercase">New Arrival</Text>
+                    </View>
+                    <Text className="text-white text-xl font-bold leading-6">
+                        Rent the new{'\n'}Sony A7S III today
+                    </Text>
+                    <Text className="text-slate-400 text-xs mt-2 font-medium">Starting from Rs. 15,000/day</Text>
+                </View>
+
+                {/* Hero Image (Static for now) */}
+                <Image
+                    source={{ uri: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=300&q=80' }}
+                    className="absolute -right-5 bottom-0 w-32 h-32 rounded-xl rotate-[-10deg]"
+                    resizeMode="cover"
+                />
+            </View>
+        </View>
+    );
+
+    // --- COMPONENT: SKELETON CARD ---
+    const SkeletonCard = () => (
+        <View className="mr-4 w-[240px]">
+            <View className="w-full h-[300px] rounded-2xl bg-gray-100 animate-pulse" />
+            <View className="mt-3 space-y-2 px-1">
+                <View className="h-4 w-3/4 bg-gray-100 rounded" />
+                <View className="h-3 w-1/2 bg-gray-100 rounded" />
+            </View>
+        </View>
+    );
+
+    // --- COMPONENT: PRO GEAR CARD ---
     const GearCard = ({ item }: { item: any }) => (
         <TouchableOpacity
-            className="mr-6 w-[280px] mb-2"
+            className="mr-4 w-[240px]"
             activeOpacity={0.9}
-            // Update your onPress to this:
-            onPress={() => router.push({
-                pathname: "/product/[id]", // This matches your actual filename
-                params: { id: item.id }    // This passes the data safely
-            })}
+            onPress={() => router.push({ pathname: "/product/[id]", params: { id: item.id } })}
         >
-            <View className="relative">
-                {/* Image: Square/4:3 Ratio with Rounded Corners */}
+            <View className="relative shadow-sm shadow-black/5">
                 <Image
                     source={{ uri: item.image }}
-                    className="w-full h-[280px] rounded-2xl bg-gray-200"
+                    className="w-full h-[300px] rounded-2xl bg-gray-200"
                     resizeMode="cover"
                 />
 
-                {/* "Guest Favourite" Badge (Exact Airbnb Look) */}
-                {item.rating >= 4.8 && (
-                    <View className="absolute top-3 left-3 bg-white/95 px-3 py-1.5 rounded-full shadow-md shadow-black/20 backdrop-blur-md border border-black/5">
-                        <Text className="text-xs font-bold text-black">Guest favourite</Text>
-                    </View>
-                )}
+                {/* Floating Gradient Overlay at bottom for text readability */}
+                <View className="absolute bottom-0 w-full h-20 rounded-b-2xl bg-black/5" />
 
-                {/* Heart Icon (With subtle shadow for readability) */}
-                <TouchableOpacity className="absolute top-3 right-3">
-                    <Ionicons name="heart" size={26} color="rgba(0,0,0,0.5)" style={{ position: 'absolute' }} />
-                    <Ionicons name="heart-outline" size={26} color="white" />
+                {/* Rating Badge (Glassmorphism) */}
+                <View className="absolute top-3 right-3 flex-row items-center gap-1 bg-white/90 px-2 py-1 rounded-lg backdrop-blur-md shadow-sm">
+                    <Ionicons name="star" size={12} color="#F59E0B" />
+                    <Text className="text-[11px] font-bold text-slate-900">{item.rating}</Text>
+                </View>
+
+                {/* Fav Button */}
+                <TouchableOpacity className="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/20 items-center justify-center backdrop-blur-sm">
+                    <Ionicons name="heart-outline" size={18} color="white" />
                 </TouchableOpacity>
             </View>
 
-            {/* Details Section */}
-            <View className="mt-3">
+            <View className="mt-3 px-1">
                 <View className="flex-row justify-between items-start">
-                    <Text className="text-[15px] font-bold text-slate-900 flex-1 mr-2 leading-5">
-                        {item.name}
-                    </Text>
-                    <View className="flex-row items-center gap-1">
-                        <Ionicons name="star" size={13} color="#1A1A1A" />
-                        <Text className="text-sm text-slate-900">{item.rating}</Text>
+                    <View>
+                        <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">
+                            {item.brand}
+                        </Text>
+                        <Text className="text-[16px] font-bold text-slate-900 leading-tight" numberOfLines={1}>
+                            {item.name}
+                        </Text>
                     </View>
                 </View>
 
-                {/* Secondary Info: Gray text */}
-                <Text className="text-slate-500 text-[14px] mt-0.5">Colombo • 2km away</Text>
-                <Text className="text-slate-500 text-[14px]">Professional Kit</Text>
-
-                {/* Price Section */}
-                <View className="flex-row items-end mt-1.5">
-                    <Text className="text-[15px] font-bold text-slate-900">
-                        Rs. {item.pricePerDay.toLocaleString()}
-                    </Text>
-                    <Text className="text-slate-900 text-[14px]"> night</Text>
+                <View className="flex-row items-center mt-2 justify-between">
+                    <View className="flex-row items-baseline">
+                        <Text className="text-[15px] font-extrabold text-slate-900">
+                            Rs. {item.pricePerDay.toLocaleString()}
+                        </Text>
+                        <Text className="text-slate-400 text-xs font-medium ml-1">/day</Text>
+                    </View>
+                    {item.verificationRequired && (
+                        <View className="bg-green-50 px-1.5 py-0.5 rounded border border-green-100">
+                            <Text className="text-[9px] font-bold text-green-700">VERIFIED</Text>
+                        </View>
+                    )}
                 </View>
             </View>
         </TouchableOpacity>
@@ -95,127 +188,159 @@ const Home = () => {
         <SafeAreaView className="flex-1 bg-white" edges={['top']}>
             <StatusBar style="dark" />
 
-            {/* --- 1. THE AIRBNB "DOUBLE DECKER" SEARCH BAR --- */}
-            {/* White pill with high shadow, Icon Left, Filter Right */}
-            {/* --- 1. SEARCH BAR (Airbnb Style) --- */}
-            <View className="px-5 pt-2 pb-4 bg-white z-50">
-                <TouchableOpacity
-                    className="flex-row items-center bg-white rounded-full h-[60px] px-5 border border-gray-100"
-                    activeOpacity={0.9}
-                    // 👇 THIS IS THE SECRET SAUCE FOR THE "POP"
-                    style={{
-                        shadowColor: "#000",
-                        shadowOffset: {
-                            width: 0,
-                            height: 4, // Pushes shadow down (floating effect)
-                        },
-                        shadowOpacity: 0.15, // Darker than standard tailwind
-                        shadowRadius: 10,   // Softer blur
-                        elevation: 10,      // High elevation for Android
-                    }}
-                >
-                    {/* Search Icon */}
-                    <Ionicons name="search" size={24} color="#1A1A1A" />
-
-                    {/* Text Container */}
-                    <View className="flex-1 ml-4 justify-center">
-                        <Text className="text-sm font-bold text-slate-900">
-                            Where to?
-                        </Text>
-                        <Text className="text-xs text-slate-500 font-medium">
-                            Anywhere • Any week • Add guests
-                        </Text>
+            {/* --- HEADER --- */}
+            <View className="px-5 pt-1 pb-2 bg-white z-50">
+                <View className="flex-row items-center justify-between mb-4">
+                    <View className="flex-1">
+                        <Text className="text-xs text-slate-400 font-medium mb-0.5">Pick up location</Text>
+                        <TouchableOpacity className="flex-row items-center gap-1 active:opacity-70">
+                            <Ionicons name="location" size={18} color="#0F172A" />
+                            <Text className="text-lg font-bold text-slate-900">Colombo, Sri Lanka</Text>
+                            <Ionicons name="chevron-down" size={14} color="#94A3B8" />
+                        </TouchableOpacity>
                     </View>
+                    <TouchableOpacity className="w-10 h-10 bg-slate-50 rounded-full items-center justify-center border border-slate-100 shadow-sm relative">
+                        <View className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full z-10 border border-white" />
+                        <Ionicons name="notifications-outline" size={22} color="#0F172A" />
+                    </TouchableOpacity>
+                </View>
 
-                    {/* Filter Button */}
-                    <View className="w-9 h-9 bg-white border border-gray-200 rounded-full items-center justify-center">
-                        <Ionicons name="options-outline" size={18} color="#1A1A1A" />
+                {/* HIGH END SEARCH BAR */}
+                <TouchableOpacity
+                    className="flex-row items-center bg-white rounded-2xl h-[52px] px-4 border border-slate-200 shadow-sm shadow-slate-100"
+                    activeOpacity={0.9}
+                >
+                    <Ionicons name="search-outline" size={22} color="#0F172A" />
+                    <View className="flex-1 ml-3 h-full justify-center">
+                        <Text className="text-slate-900 font-semibold text-[14px]">Search equipment</Text>
+                        <Text className="text-slate-400 text-[11px]">Dates • Guests • Brands</Text>
+                    </View>
+                    <View className="bg-slate-900 w-8 h-8 rounded-xl items-center justify-center">
+                        <Ionicons name="options" size={16} color="white" />
                     </View>
                 </TouchableOpacity>
             </View>
 
-            {/* --- 2. MAIN SCROLL CONTENT --- */}
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 100 }}
-                className="bg-white"
-            >
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
 
-                {/* CATEGORIES (Modern Text Pills) */}
-                <View className="mt-2 mb-6 border-b border-gray-50 pb-4">
+                {/* --- PROMO BANNER --- */}
+                <PromoBanner />
+
+                {/* --- CATEGORIES --- */}
+                <View className="mb-6">
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ paddingHorizontal: 20 }}
+                        contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
                     >
-                        {categories.map((cat) => {
-                            const isActive = activeCategoryId === cat.id;
-                            return (
-                                <TouchableOpacity
-                                    key={cat.id}
-                                    onPress={() => setActiveCategoryId(cat.id)}
-                                    activeOpacity={0.8}
-                                    className={`mr-3 px-5 py-2.5 rounded-full border transition-all ${
-                                        isActive
-                                            ? 'bg-black border-black'
-                                            : 'bg-white border-gray-200'
-                                    }`}
-                                >
-                                    <Text className={`text-[13px] font-bold ${
-                                        isActive ? 'text-white' : 'text-slate-700'
-                                    }`}>
-                                        {cat.name}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
+                        {loadingInitial ? (
+                            [1,2,3,4,5].map(i => <View key={i} className="w-16 h-20 bg-gray-50 rounded-2xl animate-pulse" />)
+                        ) : (
+                            categories.map((cat) => {
+                                const isActive = activeCategoryId === Number(cat.id);
+                                return (
+                                    <TouchableOpacity
+                                        key={cat.id}
+                                        onPress={() => handleCategoryChange(Number(cat.id))}
+                                        activeOpacity={0.7}
+                                        className={`items-center justify-center py-3 px-1 rounded-2xl w-[72px] transition-all ${
+                                            isActive ? 'bg-slate-900 shadow-md shadow-slate-300' : 'bg-white border border-slate-100'
+                                        }`}
+                                    >
+                                        <View className={`w-10 h-10 rounded-full items-center justify-center mb-1.5 ${
+                                            isActive ? 'bg-white/10' : 'bg-slate-50'
+                                        }`}>
+                                            <Ionicons
+                                                name={cat.icon as any}
+                                                size={20}
+                                                color={isActive ? "white" : "#64748B"}
+                                            />
+                                        </View>
+                                        <Text className={`text-[10px] font-bold text-center ${
+                                            isActive ? "text-white" : "text-slate-500"
+                                        }`}>
+                                            {cat.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })
+                        )}
                     </ScrollView>
                 </View>
 
-                {/* SECTION 1: Trending / Popular */}
-                <View className="mb-10">
-                    <View className="px-5 mb-5 flex-row items-center justify-between">
-                        <Text className="text-xl font-bold text-slate-900">
-                            Popular in Colombo
-                        </Text>
-                        <Ionicons name="chevron-forward" size={20} color="#1A1A1A" />
+                {/* --- TRENDING SECTION --- */}
+                <View className="mb-8">
+                    <View className="px-5 mb-4 flex-row justify-between items-center">
+                        <Text className="text-lg font-bold text-slate-900">Featured Gear</Text>
+                        <TouchableOpacity>
+                            <Text className="text-slate-500 text-xs font-bold">View All</Text>
+                        </TouchableOpacity>
                     </View>
-
                     <FlatList
                         horizontal
-                        data={trendingItems}
+                        data={loadingInitial ? [1, 2, 3] : trendingItems}
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={{ paddingLeft: 20, paddingRight: 20 }}
-                        keyExtractor={item => `pop-${item.id}`}
-                        renderItem={({ item }) => <GearCard item={item} />}
-                        snapToInterval={280 + 24} // Card Width + Margin
-                        decelerationRate="fast"
+                        keyExtractor={(item, index) => loadingInitial ? `skel-${index}` : `pop-${item.id}`}
+                        renderItem={({ item }) => loadingInitial ? <SkeletonCard /> : <GearCard item={item} />}
                     />
                 </View>
 
-                {/* SECTION 2: Available in Category */}
+                {/* --- FILTER SECTION --- */}
                 <View className="mb-10">
-                    <View className="px-5 mb-5 flex-row items-center justify-between">
-                        <Text className="text-xl font-bold text-slate-900">
-                            Available {categories.find(c => c.id === activeCategoryId)?.name}
+                    <View className="px-5 mb-4">
+                        <Text className="text-lg font-bold text-slate-900">
+                            Available {categories.find(c => Number(c.id) === activeCategoryId)?.name}
                         </Text>
-                        <Ionicons name="chevron-forward" size={20} color="#1A1A1A" />
                     </View>
+
+                    {/* Minimalist Brand Chips */}
+                    {!loadingCategory && availableBrands.length > 1 && (
+                        <View className="mb-5">
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
+                            >
+                                {availableBrands.map((brand) => {
+                                    const isSelected = activeBrand === brand;
+                                    return (
+                                        <TouchableOpacity
+                                            key={brand}
+                                            onPress={() => {
+                                                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                                                setActiveBrand(brand);
+                                            }}
+                                            className={`px-4 py-2 rounded-full border ${
+                                                isSelected
+                                                    ? "bg-slate-900 border-slate-900"
+                                                    : "bg-white border-slate-200"
+                                            }`}
+                                        >
+                                            <Text className={`text-[12px] font-bold ${isSelected ? "text-white" : "text-slate-600"}`}>
+                                                {brand}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )
+                                })}
+                            </ScrollView>
+                        </View>
+                    )}
 
                     <FlatList
                         horizontal
-                        data={filteredItems}
+                        data={loadingCategory ? [1, 2, 3] : filteredCategoryItems}
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={{ paddingLeft: 20, paddingRight: 20 }}
-                        keyExtractor={item => `cat-${item.id}`}
-                        renderItem={({ item }) => <GearCard item={item} />}
-                        snapToInterval={280 + 24}
-                        decelerationRate="fast"
+                        keyExtractor={(item, index) => loadingCategory ? `cat-skel-${index}` : `cat-${item.id}`}
+                        renderItem={({ item }) =>
+                            loadingCategory ? <SkeletonCard /> : <GearCard item={item} />
+                        }
                     />
                 </View>
-
             </ScrollView>
         </SafeAreaView>
     );
 };
+
 export default Home;

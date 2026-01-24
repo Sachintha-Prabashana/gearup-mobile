@@ -9,9 +9,7 @@ export default function RootLayout() {
     return (
         <LoaderProvider>
             <AuthProvider>
-                <View className="flex-1">
-                    <Stack screenOptions={{ headerShown: false }} />
-                </View>
+                <Stack screenOptions={{ headerShown: false }} />
             </AuthProvider>
 
         </LoaderProvider>
