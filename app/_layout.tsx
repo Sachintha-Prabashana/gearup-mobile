@@ -1,15 +1,12 @@
-import {Slot, Stack} from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { View } from "react-native";
+import { Stack } from "expo-router"; // Slot වෙනුවට Stack ගන්න
+import "../global.css";
+import 'react-native-reanimated';
+import { LoaderProvider } from "@/context/LoaderContext";
 
 export default function RootLayout() {
-    const insets = useSafeAreaInsets()
-    console.log(insets)
     return (
-        <View className={"flex-1"} style={{ marginTop: insets.top }}>
-            <Slot />
-
-        </View>
-
-    )
+        <LoaderProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+        </LoaderProvider>
+    );
 }
