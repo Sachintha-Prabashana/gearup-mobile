@@ -36,7 +36,11 @@ const Home = () => {
         <TouchableOpacity
             className="mr-6 w-[280px] mb-2"
             activeOpacity={0.9}
-            // onPress={() => router.push(`/product/${item.id}`)}
+            // Update your onPress to this:
+            onPress={() => router.push({
+                pathname: "/product/[id]", // This matches your actual filename
+                params: { id: item.id }    // This passes the data safely
+            })}
         >
             <View className="relative">
                 {/* Image: Square/4:3 Ratio with Rounded Corners */}

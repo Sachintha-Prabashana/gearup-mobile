@@ -1,4 +1,18 @@
-export const categories = [
+import admin from 'firebase-admin';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const serviceAccount = require('./serviceAccountKey.json');
+
+// 1. Initialize Firebase
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+const db = admin.firestore();
+
+// --- DATA PART 1: CATEGORIES ---
+const categories = [
     { id: 1, name: 'Cameras', icon: 'camera-outline' },
     { id: 2, name: 'Lenses', icon: 'aperture-outline' },
     { id: 3, name: 'Drones', icon: 'airplane-outline' },
@@ -6,7 +20,8 @@ export const categories = [
     { id: 5, name: 'Audio', icon: 'mic-outline' },
 ];
 
-export const gearItems = [
+// --- DATA PART 2: ITEMS (With NEW Images) ---
+const gearItems = [
     // --- CAMERAS ---
     {
         id: 101,
@@ -14,7 +29,9 @@ export const gearItems = [
         brand: 'Sony',
         name: 'Sony Alpha a7S III Cinema Kit',
         pricePerDay: 15000,
-        securityDeposit: 100000,
+        securityDeposit: 0,
+        verificationRequired: true,
+        verificationLevel: "Level 2",
         rating: 4.9,
         reviewCount: 42,
         isAvailable: true,
@@ -34,7 +51,9 @@ export const gearItems = [
         brand: 'Canon',
         name: 'Canon EOS R5 Body',
         pricePerDay: 16500,
-        securityDeposit: 120000,
+        securityDeposit: 0,
+        verificationRequired: true,
+        verificationLevel: "Level 2",
         rating: 4.8,
         reviewCount: 35,
         isAvailable: true,
@@ -53,7 +72,9 @@ export const gearItems = [
         brand: 'Blackmagic',
         name: 'BMPCC 6K Pro',
         pricePerDay: 12000,
-        securityDeposit: 80000,
+        securityDeposit: 0,
+        verificationRequired: true,
+        verificationLevel: "Level 2",
         rating: 4.7,
         reviewCount: 28,
         isAvailable: true,
@@ -74,7 +95,9 @@ export const gearItems = [
         brand: 'Sony',
         name: 'Sony FE 24-70mm f/2.8 GM',
         pricePerDay: 5500,
-        securityDeposit: 40000,
+        securityDeposit: 0,
+        verificationRequired: true,
+        verificationLevel: "Level 1",
         rating: 4.9,
         reviewCount: 56,
         isAvailable: true,
@@ -93,7 +116,9 @@ export const gearItems = [
         brand: 'Canon',
         name: 'Canon RF 70-200mm f/2.8 L IS',
         pricePerDay: 6500,
-        securityDeposit: 50000,
+        securityDeposit: 0,
+        verificationRequired: true,
+        verificationLevel: "Level 1",
         rating: 5.0,
         reviewCount: 19,
         isAvailable: true,
@@ -112,7 +137,9 @@ export const gearItems = [
         brand: 'Sigma',
         name: 'Sigma 35mm f/1.4 Art (Sony E)',
         pricePerDay: 3500,
-        securityDeposit: 25000,
+        securityDeposit: 0,
+        verificationRequired: false,
+        verificationLevel: "None",
         rating: 4.6,
         reviewCount: 62,
         isAvailable: true,
@@ -133,7 +160,9 @@ export const gearItems = [
         brand: 'DJI',
         name: 'DJI Mavic 3 Cine',
         pricePerDay: 22000,
-        securityDeposit: 150000,
+        securityDeposit: 0,
+        verificationRequired: true,
+        verificationLevel: "Level 3",
         rating: 5.0,
         reviewCount: 15,
         isAvailable: true,
@@ -153,7 +182,9 @@ export const gearItems = [
         brand: 'DJI',
         name: 'DJI Mini 3 Pro Fly More',
         pricePerDay: 8500,
-        securityDeposit: 40000,
+        securityDeposit: 0,
+        verificationRequired: true,
+        verificationLevel: "Level 2",
         rating: 4.8,
         reviewCount: 45,
         isAvailable: true,
@@ -174,7 +205,9 @@ export const gearItems = [
         brand: 'Aputure',
         name: 'Aputure 300d II Light Storm',
         pricePerDay: 7000,
-        securityDeposit: 30000,
+        securityDeposit: 0,
+        verificationRequired: true,
+        verificationLevel: "Level 1",
         rating: 4.8,
         reviewCount: 30,
         isAvailable: true,
@@ -195,7 +228,9 @@ export const gearItems = [
         brand: 'Rode',
         name: 'Rode Wireless GO II Dual',
         pricePerDay: 3500,
-        securityDeposit: 15000,
+        securityDeposit: 0,
+        verificationRequired: false,
+        verificationLevel: "None",
         rating: 4.7,
         reviewCount: 88,
         isAvailable: true,
@@ -209,3 +244,52 @@ export const gearItems = [
         specs: { mount: "Clip/Shoe", type: "Digital 2.4GHz", inputs: "3.5mm TRS", weight: "30g" }
     }
 ];
+
+// Helper: Keywords Auto-Generate
+const createKeywords = (name) => {
+    const arr = [];
+    let curName = '';
+    name.split(' ').forEach(word => {
+        curName += word.toLowerCase();
+        arr.push(curName);
+        curName += ' ';
+    });
+    return arr;
+};
+
+// --- UPLOAD FUNCTION ---
+async function seedDatabase() {
+    const batch = db.batch();
+
+    console.log(` Starting Upload Process...`);
+
+    // 1. CATEGORIES COLLECTION එකට දැමීම
+    categories.forEach((cat) => {
+        const docRef = db.collection('categories').doc(String(cat.id));
+        batch.set(docRef, cat, { merge: true });
+    });
+    console.log(`Added ${categories.length} Categories to 'categories' collection`);
+
+    gearItems.forEach((item) => {
+        const docRef = db.collection('products').doc(String(item.id));
+
+        const itemWithMetadata = {
+            ...item,
+            searchKeywords: createKeywords(item.name),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+
+        batch.set(docRef, itemWithMetadata, { merge: true });
+    });
+    console.log(`Added ${gearItems.length} Items to 'products' collection`);
+
+    // 3. COMMIT
+    try {
+        await batch.commit();
+        console.log('Success! All data uploaded to both collections.');
+    } catch (error) {
+        console.error('Error seeding database:', error);
+    }
+}
+
+seedDatabase();
