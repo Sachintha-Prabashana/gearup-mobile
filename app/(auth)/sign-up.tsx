@@ -10,14 +10,17 @@ import {
     ScrollView,
     TouchableWithoutFeedback,
     Keyboard,
-    Image,
+    Image, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router'; // Navigation සදහා
+import { useRouter } from 'expo-router';
+import { useLoader } from "@/hooks/useLoader";
+import { register } from '@/service/authService';
 
-export default function ProfessionalRegisterScreen() {
+export default function SignUp() {
     const router = useRouter();
+    const { showLoader, hideLoader, isLoading } = useLoader()
 
     // Form States
     const [fullName, setFullName] = useState('');
@@ -27,6 +30,37 @@ export default function ProfessionalRegisterScreen() {
     // UI States
     const [showPassword, setShowPassword] = useState(false);
     const [focusedInput, setFocusedInput] = useState(null);
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const handleRegister = async () => {
+        if (isLoading) {
+            return; // Prevent multiple submissions
+        }
+
+        if (!fullName || !email || !password || !confirmPassword) {
+            Alert.alert("Please fill all fields")
+            return
+        }
+
+        if (password !== confirmPassword) {
+            Alert.alert("Passwords do not match")
+            return
+        }
+
+        try {
+            showLoader()
+            await register(fullName, email, password)
+            Alert.alert("Account created successfully")
+            router.replace("/(auth)/login")
+        } catch (error) {
+            Alert.alert("Registration Failed")
+
+        } finally {
+            hideLoader()
+        }
+
+    }
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -157,12 +191,48 @@ export default function ProfessionalRegisterScreen() {
                                     </TouchableOpacity>
                                 </View>
                             </View>
+
+                            {/* Confirm Password Input */}
+                            <View>
+                                <Text className="text-sm font-semibold text-zinc-700 mb-2 ml-1">Confirm Password</Text>
+                                <View
+                                    className={`h-14 border rounded-xl px-4 flex-row items-center bg-white transition-all ${
+                                        focusedInput === 'confirmPassword' ? 'border-zinc-900 shadow-sm' : 'border-zinc-300'
+                                    }`}
+                                >
+                                    <Ionicons
+                                        name="lock-closed-outline"
+                                        size={20}
+                                        color={focusedInput === 'confirmPassword' ? "#18181b" : "#71717a"}
+                                        style={{ marginRight: 12 }}
+                                    />
+                                    <TextInput
+                                        className="flex-1 text-base text-zinc-900 h-full font-medium"
+                                        placeholder="Re-enter your password"
+                                        placeholderTextColor="#A1A1AA"
+                                        secureTextEntry={!showConfirmPassword}
+                                        value={confirmPassword}
+                                        onChangeText={setConfirmPassword}
+
+                                    />
+                                    <TouchableOpacity
+                                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="p-2"
+                                    >
+                                        <Ionicons
+                                            name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                                            size={22}
+                                            color={focusedInput === 'confirmPassword' ? "#18181b" : "#71717a"}
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
                         </View>
 
                         {/* --- SIGN UP BUTTON --- */}
                         <TouchableOpacity
                             className="w-full h-14 bg-zinc-900 rounded-xl items-center justify-center shadow-md shadow-zinc-400/20 active:bg-black active:scale-[0.99] transition-all"
-                            onPress={() => console.log("Register Logic Here")}
+                            onPress={handleRegister}
                         >
                             <Text className="text-white text-lg font-bold tracking-wide">Sign Up</Text>
                         </TouchableOpacity>
@@ -170,7 +240,7 @@ export default function ProfessionalRegisterScreen() {
                         {/* --- FOOTER --- */}
                         <View className="flex-row justify-center mt-8 mb-4">
                             <Text className="text-zinc-500 font-medium text-base">Already have an account? </Text>
-                            <TouchableOpacity onPress={() => router.back()}>
+                            <TouchableOpacity onPress={() => router.push('/login')}>
                                 <Text className="text-zinc-900 font-bold text-base underline decoration-zinc-300">Log in</Text>
                             </TouchableOpacity>
                         </View>

@@ -10,17 +10,42 @@ import {
     ScrollView,
     TouchableWithoutFeedback,
     Keyboard,
-    Image, // Image component එක import කරගන්න
+    Image, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLoader } from '@/hooks/useLoader'
 
 import { Ionicons } from '@expo/vector-icons';
+import {router} from "expo-router";
+import {login} from "@/service/authService";
 
-export default function ProfessionalLoginScreen() {
+export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [focusedInput, setFocusedInput] = useState<string | null>(null);
+    const { isLoading, showLoader, hideLoader } = useLoader();
+
+    const handleLogin = async () => {
+        if (isLoading) {
+            return
+        }
+        if (!email || !password) {
+            Alert.alert("Please fill all fields")
+            return
+        }
+        try {
+            showLoader()
+            await login(email, password)
+            router.replace("/home")
+        }catch (error) {
+            console.error(error)
+            Alert.alert("Login Failed")
+
+        } finally {
+            hideLoader()
+        }
+    }
 
 
     return (
@@ -68,7 +93,7 @@ export default function ProfessionalLoginScreen() {
                             <TouchableOpacity className="flex-row items-center justify-center h-14 border border-zinc-300 rounded-xl bg-white active:bg-zinc-50 transition-colors shadow-sm relative">
                                 {/* Local Image Icon for Google */}
                                 <Image
-                                    source={require('../../assets/icons/google.png')} // මෙතන ඔබේ path එක දෙන්න
+                                    source={require('../../assets/icons/google.png')}
                                     style={{ width: 24, height: 24, position: 'absolute', left: 20 }}
                                     resizeMode="contain"
                                 />
@@ -153,6 +178,7 @@ export default function ProfessionalLoginScreen() {
 
                         {/* --- LOGIN BUTTON --- */}
                         <TouchableOpacity
+                            onPress={handleLogin}
                             className="w-full h-14 bg-zinc-900 rounded-xl items-center justify-center shadow-md shadow-zinc-400/20 active:bg-black active:scale-[0.99] transition-all"
                         >
                             <Text className="text-white text-lg font-bold tracking-wide">Log In</Text>
@@ -161,9 +187,12 @@ export default function ProfessionalLoginScreen() {
                         {/* --- FOOTER (Sign Up Link) --- */}
                         <View className="flex-row justify-center mt-8 mb-4">
                             <Text className="text-zinc-500 font-medium text-base">Dont have an account? </Text>
-                            <TouchableOpacity>
-                                <Text className="text-zinc-900 font-bold text-base underline decoration-zinc-300">Sign up</Text>
+                            <TouchableOpacity onPress={() => router.replace('/sign-up')}>
+                                <Text className="text-zinc-900 font-bold text-base underline decoration-zinc-300">
+                                    Sign up
+                                </Text>
                             </TouchableOpacity>
+
                         </View>
 
                     </ScrollView>
