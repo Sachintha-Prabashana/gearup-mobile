@@ -15,6 +15,12 @@ module.exports = {
             textPrimary: '#2E3440',
             textSecondary: '#8A8FA3',
         },
+        fontFamily: {
+            sans: ['Inter_400Regular'],
+            medium: ['Inter_500Medium'],
+            bold: ['Inter_700Bold'],
+            extrabold: ['Inter_800ExtraBold'],
+        },
     },
   },
   plugins: [],

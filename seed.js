@@ -263,7 +263,6 @@ async function seedDatabase() {
 
     console.log(` Starting Upload Process...`);
 
-    // 1. CATEGORIES COLLECTION එකට දැමීම
     categories.forEach((cat) => {
         const docRef = db.collection('categories').doc(String(cat.id));
         batch.set(docRef, cat, { merge: true });
