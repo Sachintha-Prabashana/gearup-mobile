@@ -18,7 +18,6 @@ export const register = async (fullName: string, email: string, password: string
     // add additional user info to firestore
     setDoc(doc(db, "users", userCred.user.uid), {
         fullName,
-        role: "",
         email,
         createdAt: new Date()
     })

@@ -7,6 +7,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {Ionicons} from "@expo/vector-icons";
 import ImagePickerModal from "@/components/ImagePickerModal";
 import Toast from "react-native-toast-message";
+import { uploadIdDocuments } from "@/service/verificationService";
 
 const IdUpload = () => {
     const router = useRouter()
@@ -43,7 +44,7 @@ const IdUpload = () => {
 
         if (permissionResult.granted === false) {
             Toast.show({
-                type: 'error', 
+                type: 'error',
                 text1: 'Permission Denied',
                 text2: 'Camera access is required to take photos 📸',
                 position: 'bottom',
@@ -92,23 +93,52 @@ const IdUpload = () => {
 
     }
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!frontImage || !backImage) {
-            Alert.alert("Incomplete", "Please upload both front and back sides of your ID.");
+            Toast.show({
+                type: 'error',
+                text1: 'Incomplete Submission',
+                text2: 'Please upload both front and back sides of your ID 🆔',
+                position: 'bottom',
+                visibilityTime: 3000,
+            });
             return;
         }
 
-        showLoader();
+        try {
+            showLoader();
 
-        setTimeout(() => {
-            hideLoader();
-            router.replace({
-                pathname: "/checkout",
-                params: params
+            await uploadIdDocuments(frontImage, backImage);
+
+            hideLoader(); // Loader Off
+
+            // Success Message
+            Toast.show({
+                type: 'success',
+                text1: 'Verification Successful',
+                text2: 'Documents verified! Redirecting to checkout...',
+                position: 'top'
             });
-        }, 1500);
-    };
 
+            setTimeout(() => {
+                hideLoader();
+                router.replace({
+                    pathname: "/checkout",
+                    params: params
+                });
+            }, 1500);
+
+        } catch (error) {
+            hideLoader();
+            Toast.show({
+                type: 'error',
+                text1: 'Upload Failed',
+                text2: 'Something went wrong. Please try again.',
+                position: 'bottom'
+            });
+            console.error(error);
+        }
+    };
 
     return (
         <SafeAreaView className={"flex-1 gb-white"}>
