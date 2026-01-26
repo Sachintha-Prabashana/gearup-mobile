@@ -27,6 +27,14 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you upload your ID for verification.",
+          "cameraPermission": "The app accesses your camera to let you scan your ID for verification."
+        }
+      ],
+
       "expo-router",
       [
         "expo-splash-screen",

@@ -63,6 +63,26 @@ export default function ProductDetails() {
     const handleReserve = () => {
         if (!startDate || !endDate) {
             setCalendarOpen(true);
+            return;
+        }
+
+        // --- MOCK LOGIC  ---
+        const isUserVerified = false;
+
+        if (!isUserVerified) {
+
+            router.push({
+                pathname: "/verification/id-upload",
+                params: {
+                    itemId: item.id,
+                    startDate: startDate,
+                    endDate: endDate,
+                    pricePerDay: item.pricePerDay,
+                    image: item.image,
+                    name: item.name
+                }
+            });
+
         } else {
             console.log("Proceed to Checkout", { startDate, endDate, item });
         }
