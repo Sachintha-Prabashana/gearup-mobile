@@ -5,6 +5,9 @@ import { useRouter } from 'expo-router';
 
 const GearCard = ({ item }: { item: any }) => {
     const router = useRouter();
+    const quantity = Number(item.quantity || 0);
+    const isOutOfStock = quantity === 0;
+    const isLowStock = quantity > 0 && quantity < 3;
 
     return (
         <TouchableOpacity
@@ -15,9 +18,18 @@ const GearCard = ({ item }: { item: any }) => {
             <View className="relative shadow-sm shadow-black/5">
                 <Image
                     source={{ uri: item.image }}
-                    className="w-full h-[300px] rounded-2xl bg-gray-200"
+                    className={`w-full h-[300px] rounded-2xl bg-gray-200 ${isOutOfStock ? 'opacity-60' : ''}`}
                     resizeMode="cover"
                 />
+
+                {/* Sold Out Badge */}
+                {isOutOfStock && (
+                    <View className="absolute top-0 left-0 w-full h-full justify-center items-center bg-black/30 rounded-2xl">
+                        <View className="bg-red-500 px-4 py-1.5 rounded-full shadow-lg">
+                            <Text className="text-white text-xs font-bold uppercase tracking-wide">Sold Out</Text>
+                        </View>
+                    </View>
+                )}
 
                 {/* Floating Gradient Overlay */}
                 <View className="absolute bottom-0 w-full h-20 rounded-b-2xl bg-black/5" />
@@ -47,6 +59,13 @@ const GearCard = ({ item }: { item: any }) => {
                         </Text>
                     </View>
                 </View>
+
+                {/*  Low Stock Warning  */}
+                {!isOutOfStock && isLowStock && (
+                    <Text className="text-[10px] text-orange-600 font-bold mt-1">
+                        Only {quantity} left! 🔥
+                    </Text>
+                )}
 
                 <View className="flex-row items-center mt-2 justify-between">
                     <View className="flex-row items-baseline">

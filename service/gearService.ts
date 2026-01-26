@@ -1,5 +1,5 @@
 import { db } from "@/service/firebase"
-import {collection, getDocs, limit, where, query} from "@firebase/firestore";
+import {collection, getDocs, limit, where, query, getDoc, doc} from "@firebase/firestore";
 
 const formatSpecsForUI = (dbSpecs: any) => {
     if (!dbSpecs) return [];
@@ -72,5 +72,27 @@ export const getGearByCategory = async (categoryId: number) => {
     } catch (error) {
         console.error("Error fetching category items:", error);
         return [];
+    }
+};
+
+export const getGearById = async (id: string) => {
+    try {
+        const docRef = doc(db, "products", id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            return {
+                id: docSnap.id,
+                ...data,
+                specs: formatSpecsForUI(data.specs)
+            };
+        } else {
+            console.log("No such document!");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching item:", error);
+        return null;
     }
 };

@@ -8,10 +8,14 @@ const { width } = Dimensions.get('window');
 const FeaturedCard = ({ item }: { item: any }) => {
     const router = useRouter();
 
+    const quantity = Number(item.quantity || 0);
+    const isOutOfStock = quantity === 0;
+    const isLowStock = quantity > 0 && quantity < 3;
+
     return (
         <TouchableOpacity
             style={{ width: width - 40 }}
-            className="mr-5 mb-2 bg-white rounded-3xl shadow-sm border border-slate-100"
+            className={`w-full h-[220px] rounded-t-3xl bg-gray-200 ${isOutOfStock ? 'opacity-60' : ''}`}
             activeOpacity={0.9}
             onPress={() => router.push({ pathname: "/product/[id]", params: { id: item.id } })}
         >
@@ -23,9 +27,25 @@ const FeaturedCard = ({ item }: { item: any }) => {
                     resizeMode="cover"
                 />
 
-                <View className="absolute top-4 left-4 bg-white/95 px-3 py-1.5 rounded-full flex-row items-center gap-1.5">
-                    <View className="w-2 h-2 rounded-full bg-green-500" />
-                    <Text className="text-[11px] font-bold text-slate-900">Available Now</Text>
+                {/*  SOLD OUT Overlay */}
+                {isOutOfStock && (
+                    <View className="absolute top-0 left-0 w-full h-full justify-center items-center bg-black/10 rounded-t-3xl">
+                        <View className="bg-red-500 px-5 py-2 rounded-full shadow-lg transform scale-110">
+                            <Text className="text-white font-bold uppercase tracking-widest text-sm">Sold Out</Text>
+                        </View>
+                    </View>
+                )}
+
+                <View className="absolute top-4 left-4 bg-white/95 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 shadow-sm backdrop-blur-md">
+                    <View className={`w-2 h-2 rounded-full ${
+                        isOutOfStock ? 'bg-red-500' : isLowStock ? 'bg-orange-500' : 'bg-green-500'
+                    }`} />
+
+                    <Text className={`text-[11px] font-bold ${
+                        isOutOfStock ? 'text-red-600' : isLowStock ? 'text-orange-600' : 'text-slate-900'
+                    }`}>
+                        {isOutOfStock ? "Sold Out" : isLowStock ? `Only ${quantity} Left` : "Available Now"}
+                    </Text>
                 </View>
 
                 <TouchableOpacity className="absolute top-4 right-4 w-10 h-10 bg-black/20 rounded-full items-center justify-center backdrop-blur-md border border-white/10">

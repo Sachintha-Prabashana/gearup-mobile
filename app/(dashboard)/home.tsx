@@ -87,8 +87,19 @@ const Home = () => {
     }, [categoryItems]);
 
     const filteredCategoryItems = useMemo(() => {
-        if (activeBrand === "All") return categoryItems;
-        return categoryItems.filter(item => item.brand === activeBrand);
+        let items = categoryItems;
+
+        if (activeBrand !== "All") {
+            items = items.filter(item => item.brand === activeBrand);
+        }
+        return items.sort((a, b) => {
+            const qtyA = Number(a.quantity || 0);
+            const qtyB = Number(b.quantity || 0);
+
+            if (qtyA === 0 && qtyB > 0) return 1;
+            if (qtyA > 0 && qtyB === 0) return -1;
+            return 0;
+        });
     }, [categoryItems, activeBrand]);
 
     return (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,7 @@ import {
     Dimensions,
     FlatList,
     StatusBar,
-    Platform
+    Platform, ActivityIndicator
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,9 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { gearItems } from "@/constants/gearData";
 import ReviewsSection from "@/components/Product/ReviewSection";
 import LocationSection from "@/components/Product/LocationSection";
-import DateSelectModal from "@/components/Product/DateSelectModal"; // නැත්නම් DB service එක import කරන්න
-
-// Import Custom Components
+import DateSelectModal from "@/components/Product/DateSelectModal";
+import { getGearById } from "@/service/gearService";
 
 
 const { width } = Dimensions.get('window');
@@ -29,17 +28,33 @@ export default function ProductDetails() {
     const router = useRouter();
     const { id } = useLocalSearchParams();
 
-    // Find Item
-
-    const item = gearItems.find(g => g.id === parseInt(id as string));
-
     // State
+    const [item, setItem] = useState<any>(null);
     const [activeSlide, setActiveSlide] = useState(0);
+    const [loading, setLoading] = useState(true);
     const [isCalendarOpen, setCalendarOpen] = useState(false);
     const [startDate, setStartDate] = useState<string | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
 
-    if (!item) return <View className="flex-1 bg-white items-center justify-center"><Text>Item not found</Text></View>;
+    useEffect(() => {
+        const fetchData = async () => {
+            if (id) {
+                setLoading(true);
+                const data = await getGearById(id as string);
+                setItem(data);
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <View className="flex-1 bg-white items-center justify-center">
+                <ActivityIndicator size="large" color="#0F172A"/>
+            </View>
+        );
+    }
 
     // Image Slider Handler
     const onScroll = (event: any) => {
@@ -57,10 +72,16 @@ export default function ProductDetails() {
 
     }
 
+    // Stock Check Logic
+    const quantity = Number(item.quantity || 0);
+    const isOutOfStock = quantity === 0;
+
     const nights = (startDate && endDate) ? calculateNights(startDate, endDate) : 0;
     const totalPrice = nights * item.pricePerDay;
 
     const handleReserve = () => {
+        if (isOutOfStock) return;
+
         if (!startDate || !endDate) {
             setCalendarOpen(true);
             return;
@@ -112,6 +133,15 @@ export default function ProductDetails() {
                         keyExtractor={(_, index) => index.toString()}
                     />
 
+                    {/* Stock Overlay if Out of Stock */}
+                    {isOutOfStock && (
+                        <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/40 items-center justify-center z-10">
+                            <View className="bg-red-500 px-6 py-2 rounded-full transform scale-125">
+                                <Text className="text-white font-bold text-lg uppercase">Sold Out</Text>
+                            </View>
+                        </View>
+                    )}
+
                     {/* Navigation Buttons */}
                     <View className="absolute top-12 left-5 right-5 flex-row justify-between items-center z-10">
                         <TouchableOpacity
@@ -153,6 +183,26 @@ export default function ProductDetails() {
                         <Text className="text-sm text-slate-500 font-sans"> · Colombo, Sri Lanka</Text>
                     </View>
 
+                    {/*  1. Stock Display Logic  */}
+                    {!isOutOfStock && (
+                        <View className={`self-start px-3 py-1.5 rounded-lg mb-6 flex-row items-center gap-1.5 ${
+                            quantity < 3 ? 'bg-red-50 border border-red-100' : 'bg-green-50 border border-green-100'
+                        }`}>
+                            <Ionicons
+                                name={quantity < 3 ? "flame" : "checkmark-circle"}
+                                size={16}
+                                color={quantity < 3 ? "#DC2626" : "#16A34A"}
+                            />
+                            <Text className={`text-xs font-bold font-sans ${
+                                quantity < 3 ? 'text-red-700' : 'text-green-700'
+                            }`}>
+                                {quantity < 3
+                                    ? `Hurry! Only ${quantity} left in stock`
+                                    : `In Stock (${quantity} available)`}
+                            </Text>
+                        </View>
+                    )}
+
                     <View className="h-[1px] bg-gray-100 w-full mb-6" />
 
                     {/* Host Info */}
@@ -182,10 +232,22 @@ export default function ProductDetails() {
 
                     <View className="h-[1px] bg-gray-100 w-full mb-6" />
 
-                    {/* Features / Included Items */}
+                    {/* Specs / Features (from DB format) */}
                     <View className="mb-6">
-                        <Text className="text-lg font-bold text-slate-900 font-sans mb-4">What's included</Text>
-                        {item.features && item.features.map((feature: string, index: number) => (
+                        <Text className="text-lg font-bold text-slate-900 font-sans mb-4">Features & Specs</Text>
+
+                        {/* Display Specs using the logic from service */}
+                        {item.specs && item.specs.map((spec: any, index: number) => (
+                            <View key={index} className="flex-row items-start mb-4">
+                                <Ionicons name={spec.icon || "checkmark-circle-outline"} size={22} color="#475569" style={{ marginTop: 1 }} />
+                                <Text className="ml-3 text-slate-700 text-[15px] flex-1 font-sans capitalize">
+                                    {spec.text}
+                                </Text>
+                            </View>
+                        ))}
+
+                        {/* Fallback for 'features' array if old format exists */}
+                        {(!item.specs || item.specs.length === 0) && item.features && item.features.map((feature: string, index: number) => (
                             <View key={index} className="flex-row items-start mb-4">
                                 <Ionicons name="checkmark-circle-outline" size={22} color="#475569" style={{ marginTop: 1 }} />
                                 <Text className="ml-3 text-slate-700 text-[15px] flex-1 font-sans">{feature}</Text>
@@ -212,7 +274,8 @@ export default function ProductDetails() {
                         </Text>
 
                         <TouchableOpacity
-                            onPress={() => setCalendarOpen(true)}
+                            // when item is out of stock, disable date selection
+                            onPress={() => !isOutOfStock && setCalendarOpen(true)}
                             className="w-full border-t border-gray-200 pt-3 flex-row justify-between items-center"
                         >
                             <Text className="font-bold text-slate-900 font-sans">
@@ -256,7 +319,7 @@ export default function ProductDetails() {
                                 </Text>
                                 <Text className="text-slate-500 text-sm mb-0.5 font-sans font-medium"> / night</Text>
                             </View>
-                            <TouchableOpacity onPress={() => setCalendarOpen(true)}>
+                            <TouchableOpacity onPress={() => !isOutOfStock && setCalendarOpen(true)}>
                                 <Text className="text-xs text-slate-500 underline font-bold font-sans mt-0.5">
                                     Add dates
                                 </Text>
@@ -265,13 +328,20 @@ export default function ProductDetails() {
                     )}
                 </View>
 
+                {/* Reserve Button Logic Update */}
                 <TouchableOpacity
-                    className={`px-8 py-3.5 rounded-xl shadow-md active:opacity-90 ${startDate && endDate ? 'bg-[#FF385C]' : 'bg-slate-900'}`}
+                    className={`px-8 py-3.5 rounded-xl shadow-md active:opacity-90 ${
+                        isOutOfStock
+                            ? 'bg-gray-400'
+                            :startDate && endDate ? 'bg-[#FF385C]' : 'bg-slate-900'}`}
                     activeOpacity={0.8}
+                    disabled={isOutOfStock}
                     onPress={handleReserve}
                 >
                     <Text className="text-white font-bold text-base font-sans">
-                        {startDate && endDate ? "Reserve" : "Check availability"}
+                        {isOutOfStock
+                            ? "Unavailable"
+                            : startDate && endDate ? "Reserve" : "Check availability"}
                     </Text>
                 </TouchableOpacity>
             </View>
