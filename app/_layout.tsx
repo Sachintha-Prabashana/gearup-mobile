@@ -12,6 +12,7 @@ import {
 import { LoaderProvider } from "@/context/LoaderContext";
 import { AuthProvider } from "@/context/AuthContext";
 import {useEffect} from "react";
+import Toast from "react-native-toast-message";
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -36,6 +37,7 @@ export default function RootLayout() {
         <LoaderProvider>
             <AuthProvider>
                 <Stack screenOptions={{ headerShown: false }} />
+                <Toast />
             </AuthProvider>
 
         </LoaderProvider>
