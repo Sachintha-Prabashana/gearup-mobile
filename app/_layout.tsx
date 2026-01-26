@@ -2,6 +2,7 @@ import { Stack } from "expo-router"; // Slot වෙනුවට Stack ගන්�
 import "../global.css";
 import 'react-native-reanimated';
 import * as SplashScreen from 'expo-splash-screen';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import {
     useFonts,
     Inter_400Regular,
@@ -16,6 +17,11 @@ import Toast from "react-native-toast-message";
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+
+    const publishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
+    console.log("Stripe Key:", publishableKey);
+
     const [fontsLoaded] = useFonts({
         Inter_400Regular,
         Inter_500Medium,
@@ -34,12 +40,16 @@ export default function RootLayout() {
     }
 
     return (
-        <LoaderProvider>
-            <AuthProvider>
-                <Stack screenOptions={{ headerShown: false }} />
-                <Toast />
-            </AuthProvider>
-
-        </LoaderProvider>
+        <StripeProvider
+            publishableKey={publishableKey as string}
+            // merchantIdentifier="merchant.com.gearup"
+        >
+            <LoaderProvider>
+                <AuthProvider>
+                    <Stack screenOptions={{ headerShown: false }} />
+                    <Toast />
+                </AuthProvider>
+            </LoaderProvider>
+        </StripeProvider>
     );
 }

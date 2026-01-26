@@ -34,7 +34,6 @@
           "cameraPermission": "The app accesses your camera to let you scan your ID for verification."
         }
       ],
-
       "expo-router",
       [
         "expo-splash-screen",
@@ -48,7 +47,14 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.gearup",
+          "enableGooglePay": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

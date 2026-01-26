@@ -3,14 +3,17 @@ import React, {useState} from 'react'
 
 import { useLoader } from "@/hooks/useLoader";
 import Toast from 'react-native-toast-message';
-import {useLocalSearchParams, useRouter} from "expo-router";
-import {SafeAreaView} from "react-native-safe-area-context";
-import {Ionicons} from "@expo/vector-icons";
-import {createBooking} from "@/service/bookingService";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { createBooking } from "@/service/bookingService";
+import { useStripe } from '@stripe/stripe-react-native';
 
 const Checkout = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
+    // initialize stripe hooks
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
     const { itemId, startDate, endDate, pricePerDay, image, name } = params;
     const { showLoader, hideLoader } = useLoader();
@@ -26,7 +29,73 @@ const Checkout = () => {
     const taxes = basePrice * 0.02; // 2% Tax
     const totalPrice = basePrice + serviceFee + taxes;
 
-    const handleConfirmBooking = async () => {
+    const fetchPaymentSheetParams = async () => {
+        try{
+            const IP_ADDRESS = "192.168.8.189"
+            const response = await fetch(`http://${IP_ADDRESS}:4000/api/payment-sheet`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    amount: totalPrice,
+                }),
+            });
+
+            const { paymentIntent, ephemeralKey, customer } = await response.json();
+
+            return {
+                paymentIntent,
+                ephemeralKey,
+                customer,
+            };
+
+        } catch (error) {
+            console.error("Error fetching payment params:", error);
+            throw new Error("Server Connection Failed");
+        }
+    }
+
+    const openPaymentSheet = async () => {
+        try {
+            showLoader()
+
+            const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
+
+            const { error } = await initPaymentSheet({
+                merchantDisplayName: "GearUp Rentals",
+                customerId: customer,
+                customerEphemeralKeySecret: ephemeralKey,
+                paymentIntentClientSecret: paymentIntent,
+                defaultBillingDetails: {
+                    name: 'Sachintha Prabashana',
+                },
+            });
+
+            hideLoader();
+
+            if (error) {
+                Toast.show({ type: 'error', text1: 'Error', text2: error.message });
+                return;
+            }
+
+            const { error: paymentError } = await presentPaymentSheet();
+
+            if (paymentError) {
+                Toast.show({ type: 'info', text1: 'Canceled', text2: 'Payment was canceled.' });
+            } else {
+                await handleConfirmBooking(true);
+            }
+
+        }catch(error) {
+            hideLoader();
+            console.log(error);
+            Toast.show({ type: 'error', text1: 'Payment Error', text2: 'Could not connect to payment server.' });
+
+        }
+    }
+
+    const handleConfirmBooking = async (ispaid: boolean = false) => {
         try {
             showLoader()
 
@@ -39,6 +108,7 @@ const Checkout = () => {
                 nights: nights,
                 totalPrice: totalPrice,
                 paymentMethod: paymentMethod
+                // status: isPaid ? 'PAID' : 'PENDING_PAYMENT' - if supporting payment status
             })
 
             hideLoader()
@@ -75,6 +145,14 @@ const Checkout = () => {
         }
 
     }
+
+    const handlePress = () => {
+        if (paymentMethod === 'card') {
+            openPaymentSheet();
+        } else {
+            handleConfirmBooking(false);
+        }
+    };
 
     return (
         <SafeAreaView className={"flex-1 bg-white"} edges={["top"]}>
@@ -194,7 +272,7 @@ const Checkout = () => {
             <View className="p-5 border-t border-gray-100 bg-white shadow-lg">
                 <TouchableOpacity
                     className="bg-[#FF385C] w-full py-4 rounded-xl items-center active:scale-[0.98] transition-all flex-row justify-center"
-                    onPress={handleConfirmBooking}
+                    onPress={handlePress}
                 >
                     <Text className="text-white font-bold text-lg font-sans">
                         {paymentMethod === 'card' ? `Pay Rs. ${totalPrice.toLocaleString()}` : 'Confirm Booking'}
