@@ -15,9 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
+import Toast from 'react-native-toast-message';
 
-// Service Imports
 import { getCategories, getGearByCategory, getTrendingGear } from '@/service/gearService';
+import { toggleFavorite, getUserFavoriteIds } from "@/service/favoriteService";
+import { useAuth } from "@/hooks/useAuth";
 import PromoCarousel from "@/components/PromoCarousel";
 import SkeletonCard from "@/components/SkeletonCard";
 import GearCard from "@/components/GearCard";
@@ -32,6 +34,7 @@ const { width } = Dimensions.get('window');
 
 const Home = () => {
     const router = useRouter();
+    const { user } = useAuth();
 
     // --- STATE ---
     const [activeCategoryId, setActiveCategoryId] = useState<number>(1);
@@ -41,6 +44,9 @@ const Home = () => {
     const [categoryItems, setCategoryItems] = useState<any[]>([]);
     const [loadingInitial, setLoadingInitial] = useState(true);
     const [loadingCategory, setLoadingCategory] = useState(false);
+
+    //
+    const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
     // --- DATA LOADING ---
     useEffect(() => {
@@ -54,6 +60,11 @@ const Home = () => {
                 setCategories(sortedCats);
                 setTrendingItems(trendsData);
 
+                if (user) {
+                    const ids = await getUserFavoriteIds();
+                    setFavoriteIds(new Set(ids));
+                }
+
                 if (sortedCats.length > 0) {
                     await loadCategoryItems(Number(sortedCats[0].id));
                 }
@@ -64,7 +75,34 @@ const Home = () => {
             }
         };
         loadBaseData();
-    }, []);
+    }, [user]);
+
+    const handleToggleFavorite = async (item: any) => {
+        if(!user) {
+            Toast.show({ type: 'error', text1: 'Login Required', text2: 'Please login to save items.' });
+            return;
+        }
+
+        const newFavorites = new Set(favoriteIds);
+        const isCurrentlyLiked = newFavorites.has(item.id);
+
+        if (isCurrentlyLiked) {
+            newFavorites.delete(item.id);
+        } else {
+            newFavorites.add(item.id);
+        }
+
+        setFavoriteIds(newFavorites);
+
+        try {
+            await toggleFavorite(item);
+        } catch (error) {
+            if (isCurrentlyLiked) newFavorites.add(item.id);
+            else newFavorites.delete(item.id);
+            setFavoriteIds(new Set(newFavorites));
+            Toast.show({ type: 'error', text1: 'Connection Error' });
+        }
+    }
 
     const handleCategoryChange = async (catId: number) => {
         if (catId === activeCategoryId) return;
@@ -113,11 +151,9 @@ const Home = () => {
                 <View className="flex-row items-center justify-between mb-4">
                     {/* Location Info */}
                     <View>
-                        {/* font-sans added for Inter Regular */}
                         <Text className="text-xs text-slate-400 font-medium font-sans mb-0.5">Location</Text>
                         <TouchableOpacity className="flex-row items-center gap-1 active:opacity-70">
                             <Ionicons name="location" size={18} color="#0F172A" />
-                            {/* font-sans + font-bold for Inter Bold */}
                             <Text className="text-lg font-bold text-slate-900 font-sans">Colombo, SL</Text>
                             <Ionicons name="chevron-down" size={14} color="#94A3B8" />
                         </TouchableOpacity>
@@ -125,19 +161,17 @@ const Home = () => {
 
                     {/* Right Side: Notify + Profile */}
                     <View className="flex-row items-center gap-3">
-                        {/* Notify Icon */}
                         <TouchableOpacity className="w-10 h-10 bg-white rounded-full items-center justify-center border border-slate-200 shadow-sm relative">
                             <View className="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full z-10 border border-white" />
                             <Ionicons name="notifications-outline" size={22} color="#0F172A" />
                         </TouchableOpacity>
 
-                        {/* Profile Image */}
                         <TouchableOpacity
                             onPress={() => router.push("/profile")}
-                            className="w-10 h-10 rounded-full overflow-hidden border border-slate-200"
+                            className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-gray-100"
                         >
                             <Image
-                                source={{ uri: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&auto=format&fit=crop&q=60" }}
+                                source={{ uri: user?.photoURL || "https://i.pravatar.cc/300" }}
                                 className="w-full h-full"
                                 resizeMode="cover"
                             />
@@ -223,7 +257,14 @@ const Home = () => {
                         contentContainerStyle={{ paddingLeft: 20, paddingRight: 20 }}
                         keyExtractor={(item, index) => loadingInitial ? `skel-${index}` : `pop-${item.id}`}
                         renderItem={({ item }) =>
-                            loadingInitial ? <SkeletonCard /> : <FeaturedCard item={item} />
+                            loadingInitial ? <SkeletonCard /> : (
+                                <FeaturedCard
+                                    item={item}
+                                    // 9. Pass Props to FeaturedCard
+                                    isLiked={favoriteIds.has(item.id)}
+                                    onToggle={() => handleToggleFavorite(item)}
+                                />
+                            )
                         }
                         snapToInterval={width - 20}
                         decelerationRate="fast"
@@ -277,7 +318,16 @@ const Home = () => {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={{ paddingLeft: 20, paddingRight: 20 }}
                         keyExtractor={(item, index) => loadingCategory ? `cat-skel-${index}` : `cat-${item.id}`}
-                        renderItem={({ item }) => loadingCategory ? <SkeletonCard /> : <GearCard item={item} />}
+                        renderItem={({ item }) =>
+                            loadingCategory ? <SkeletonCard /> : (
+                                <GearCard
+                                    item={item}
+                                    // 10. Pass Props to GearCard
+                                    isLiked={favoriteIds.has(item.id)}
+                                    onToggle={() => handleToggleFavorite(item)}
+                                />
+                            )
+                        }
                     />
                 </View>
             </ScrollView>

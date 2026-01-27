@@ -5,7 +5,13 @@ import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
-const FeaturedCard = ({ item }: { item: any }) => {
+interface FeaturedCardProps {
+    item: any;
+    isLiked: boolean;
+    onToggle: () => void;
+}
+
+const FeaturedCard = ({ item, isLiked, onToggle }: FeaturedCardProps) => {
     const router = useRouter();
 
     const quantity = Number(item.quantity || 0);
@@ -14,8 +20,8 @@ const FeaturedCard = ({ item }: { item: any }) => {
 
     return (
         <TouchableOpacity
-            style={{ width: width - 40 }}
-            className={`w-full h-[220px] rounded-t-3xl bg-gray-200 ${isOutOfStock ? 'opacity-60' : ''}`}
+            style={{ width: width - 40, marginRight: 20 }}
+            className={`w-full rounded-3xl bg-gray-200 ${isOutOfStock ? 'opacity-60' : ''}`}
             activeOpacity={0.9}
             onPress={() => router.push({ pathname: "/product/[id]", params: { id: item.id } })}
         >
@@ -23,7 +29,7 @@ const FeaturedCard = ({ item }: { item: any }) => {
             <View className="relative">
                 <Image
                     source={{ uri: item.image }}
-                    className="w-full h-[220px] rounded-t-3xl"
+                    className="w-full h-[220px] rounded-3xl bg-gray-100"
                     resizeMode="cover"
                 />
 
@@ -36,24 +42,39 @@ const FeaturedCard = ({ item }: { item: any }) => {
                     </View>
                 )}
 
-                <View className="absolute top-4 left-4 bg-white/95 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 shadow-sm backdrop-blur-md">
-                    <View className={`w-2 h-2 rounded-full ${
-                        isOutOfStock ? 'bg-red-500' : isLowStock ? 'bg-orange-500' : 'bg-green-500'
-                    }`} />
+                {/*  Left Side: Status Badge (Available / Low Stock) */}
+                <View className="absolute top-4 left-4 z-20">
+                    <View className="bg-white/95 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 shadow-sm backdrop-blur-md">
+                        <View className={`w-2 h-2 rounded-full ${
+                            isOutOfStock ? 'bg-red-500' : isLowStock ? 'bg-orange-500' : 'bg-green-500'
+                        }`} />
 
-                    <Text className={`text-[11px] font-bold ${
-                        isOutOfStock ? 'text-red-600' : isLowStock ? 'text-orange-600' : 'text-slate-900'
-                    }`}>
-                        {isOutOfStock ? "Sold Out" : isLowStock ? `Only ${quantity} Left` : "Available Now"}
-                    </Text>
+                        <Text className={`text-[10px] font-bold uppercase tracking-wide ${
+                            isOutOfStock ? 'text-red-600' : isLowStock ? 'text-orange-600' : 'text-slate-900'
+                        }`}>
+                            {isOutOfStock ? "Sold Out" : isLowStock ? `Only ${quantity} Left` : "Available Now"}
+                        </Text>
+                    </View>
                 </View>
 
-                <TouchableOpacity className="absolute top-4 right-4 w-10 h-10 bg-black/20 rounded-full items-center justify-center backdrop-blur-md border border-white/10">
-                    <Ionicons name="heart-outline" size={22} color="white" />
+                {/*  Right Side: Heart Button (Glass Effect) */}
+                <TouchableOpacity
+                    onPress={onToggle}
+                    className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/20 items-center justify-center backdrop-blur-md border border-white/20 active:scale-90 transition-all shadow-sm"
+                >
+                    <Ionicons
+                        name={isLiked ? "heart" : "heart-outline"}
+                        size={20}
+                        color={isLiked ? "#EF4444" : "white"}
+                    />
                 </TouchableOpacity>
+
+                {/* Bottom Gradient (Optional: Makes text readable if overlaying) */}
+                {/* <View className="absolute bottom-0 w-full h-10 bg-gradient-to-t from-black/10 to-transparent" /> */}
             </View>
 
-            <View className="p-5">
+            {/* Bottom Content Area */}
+            <View className="p-5 bg-white rounded-b-3xl border-x border-b border-gray-100 shadow-sm">
                 {/* 1. Title & Price Row */}
                 <View className="flex-row justify-between items-start mb-2">
                     <Text className="text-xl font-bold text-slate-900 flex-1 mr-2" numberOfLines={1}>

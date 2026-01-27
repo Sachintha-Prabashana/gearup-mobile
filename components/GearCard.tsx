@@ -3,11 +3,20 @@ import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-const GearCard = ({ item }: { item: any }) => {
+interface GearCardProps {
+    item: any;
+    isLiked: boolean;
+    onToggle: () => void;
+}
+
+
+const GearCard = ({ item, isLiked, onToggle }: GearCardProps) => {
     const router = useRouter();
     const quantity = Number(item.quantity || 0);
+
     const isOutOfStock = quantity === 0;
     const isLowStock = quantity > 0 && quantity < 3;
+
 
     return (
         <TouchableOpacity
@@ -40,9 +49,16 @@ const GearCard = ({ item }: { item: any }) => {
                     <Text className="text-[11px] font-bold text-slate-900">{item.rating}</Text>
                 </View>
 
-                {/* Fav Button */}
-                <TouchableOpacity className="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/20 items-center justify-center backdrop-blur-sm">
-                    <Ionicons name="heart-outline" size={18} color="white" />
+                {/* 2. Fav Button Logic Update */}
+                <TouchableOpacity
+                    onPress={onToggle}
+                    className="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/20 items-center justify-center backdrop-blur-sm active:scale-90 transition-all"
+                >
+                    <Ionicons
+                        name={isLiked ? "heart" : "heart-outline"}
+                        size={18}
+                        color={isLiked ? "#EF4444" : "white"}
+                    />
                 </TouchableOpacity>
             </View>
 
@@ -63,7 +79,7 @@ const GearCard = ({ item }: { item: any }) => {
                 {/*  Low Stock Warning  */}
                 {!isOutOfStock && isLowStock && (
                     <Text className="text-[10px] text-orange-600 font-bold mt-1">
-                        Only {quantity} left! 🔥
+                        Only {item.quantity} left! 🔥
                     </Text>
                 )}
 

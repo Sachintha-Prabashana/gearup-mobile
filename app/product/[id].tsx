@@ -23,6 +23,7 @@ import { getGearById } from "@/service/gearService";
 import { useAuth } from "@/hooks/useAuth";
 import { useLoader } from "@/hooks/useLoader";
 import { checkUserVerification } from "@/service/authService";
+import { checkIsFavorite, toggleFavorite } from "@/service/favoriteService";
 import Toast from 'react-native-toast-message';
 
 
@@ -42,6 +43,7 @@ export default function ProductDetails() {
     const [startDate, setStartDate] = useState<string | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
     const [verifying, setVerifying] = useState(false);
+    const [isLiked, setIsLiked] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -52,6 +54,13 @@ export default function ProductDetails() {
 
                     if (data) {
                         setItem(data);
+
+                        // Check if user has liked this item
+                        if (user) {
+                            const isFav = await checkIsFavorite(id as string);
+                            setIsLiked(isFav);
+                        }
+
                         setDataLoaded(true);
                     } else {
                         Toast.show({
@@ -74,7 +83,31 @@ export default function ProductDetails() {
             }
         };
         fetchData();
-    }, [id]);
+    }, [id, user]);
+
+    //  4. Handle Like Toggle Logic
+    const handleToggleFavorite = async () => {
+        if (!user) {
+            Toast.show({
+                type: 'error',
+                text1: 'Login Required',
+                text2: 'Please sign in to save items.',
+                position: 'bottom'
+            });
+            return;
+        }
+
+        // Optimistic Update
+        const previousState = isLiked;
+        setIsLiked(!isLiked);
+
+        try {
+            await toggleFavorite(item); // DB call
+        } catch (error) {
+            setIsLiked(previousState);
+            Toast.show({ type: 'error', text1: 'Error', text2: 'Could not update favorites.' });
+        }
+    };
 
     if (!dataLoaded || !item) {
         return <View className="flex-1 bg-white" />;
@@ -229,8 +262,17 @@ export default function ProductDetails() {
                             <TouchableOpacity className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-md active:scale-95">
                                 <Ionicons name="share-outline" size={20} color="black" />
                             </TouchableOpacity>
-                            <TouchableOpacity className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-md active:scale-95">
-                                <Ionicons name="heart-outline" size={20} color="black" />
+
+                            {/*  5. Heart Button Updated with Logic */}
+                            <TouchableOpacity
+                                onPress={handleToggleFavorite}
+                                className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-md active:scale-95 transition-all"
+                            >
+                                <Ionicons
+                                    name={isLiked ? "heart" : "heart-outline"}
+                                    size={20}
+                                    color={isLiked ? "#EF4444" : "black"}
+                                />
                             </TouchableOpacity>
                         </View>
                     </View>
