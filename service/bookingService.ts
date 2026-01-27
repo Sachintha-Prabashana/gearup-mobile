@@ -1,5 +1,6 @@
 import { db, auth  } from "./firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { doc, collection, runTransaction, serverTimestamp } from "firebase/firestore";
+
 
 export interface BookingData {
     itemId: string;
@@ -17,22 +18,49 @@ export const createBooking = async (data: BookingData) => {
         const user = auth.currentUser;
         if (!user) throw new Error("User not authenticated");
 
-        const newBooking = {
-            userId: user.uid,
-            ...data,
-            status: 'CONFIRMED',
-            createdAt: serverTimestamp(), // get Firestore server time
-            isComplete: false
-        }
+        const result = await runTransaction(db, async (transaction) => {
+            const itemRef = doc(db, "products", data.itemId);
 
-        // save to Firestore
-        const docRef = await addDoc(collection(db, "bookings"), newBooking);
+            // get the item document
+            const itemDoc = await transaction.get(itemRef);
 
-        console.log("Booking created with ID:", docRef.id);
-        return { success: true, bookingId: docRef.id };
+            if (!itemDoc.exists()) {
+                throw new Error("Item does not exist");
+            }
+
+            const currentQty = Number(itemDoc.data().quantity || 0);
+
+            if (currentQty <= 0) {
+                throw new Error("Sorry, this item is currently out of stock.");
+            }
+
+            // for create new booking reference
+            const newBookingRef = doc(collection(db, "bookings"));
+
+            const newBooking = {
+                bookingId: newBookingRef.id,
+                userId: user.uid,
+                ...data,
+                status: 'CONFIRMED',
+                createdAt: serverTimestamp(),
+                isComplete: false
+            };
+
+            transaction.set(newBookingRef, newBooking);
+
+            transaction.update(itemRef, {
+                quantity: currentQty - 1
+            });
+
+            return { success: true, bookingId: newBookingRef.id };
+
+        });
+
+        console.log("Booking & Inventory Update Successful:", result.bookingId);
+        return result;
 
     } catch (error) {
-        console.error("Error creating booking:", error);
+        console.error("Error processing booking:", error);
         throw error;
     }
 }
