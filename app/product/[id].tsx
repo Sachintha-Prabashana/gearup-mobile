@@ -20,6 +20,10 @@ import ReviewsSection from "@/components/Product/ReviewSection";
 import LocationSection from "@/components/Product/LocationSection";
 import DateSelectModal from "@/components/Product/DateSelectModal";
 import { getGearById } from "@/service/gearService";
+import { useAuth } from "@/hooks/useAuth";
+import { useLoader } from "@/hooks/useLoader";
+import { checkUserVerification } from "@/service/authService";
+import Toast from 'react-native-toast-message';
 
 
 const { width } = Dimensions.get('window');
@@ -27,33 +31,53 @@ const { width } = Dimensions.get('window');
 export default function ProductDetails() {
     const router = useRouter();
     const { id } = useLocalSearchParams();
+    const { user } = useAuth();
+    const { showLoader, hideLoader } = useLoader();
 
     // State
     const [item, setItem] = useState<any>(null);
     const [activeSlide, setActiveSlide] = useState(0);
-    const [loading, setLoading] = useState(true);
+    const [dataLoaded, setDataLoaded] = useState(false);
     const [isCalendarOpen, setCalendarOpen] = useState(false);
     const [startDate, setStartDate] = useState<string | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
+    const [verifying, setVerifying] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
             if (id) {
-                setLoading(true);
-                const data = await getGearById(id as string);
-                setItem(data);
-                setLoading(false);
+                try {
+                    showLoader();
+                    const data = await getGearById(id as string);
+
+                    if (data) {
+                        setItem(data);
+                        setDataLoaded(true);
+                    } else {
+                        Toast.show({
+                            type: 'error',
+                            text1: 'Item Not Found',
+                            text2: 'Could not load product details.',
+                        });
+                        router.back();
+                    }
+                } catch (error) {
+                    console.error(error);
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Connection Error',
+                        text2: 'Something went wrong while loading.',
+                    });
+                } finally {
+                    hideLoader();
+                }
             }
         };
         fetchData();
     }, [id]);
 
-    if (loading) {
-        return (
-            <View className="flex-1 bg-white items-center justify-center">
-                <ActivityIndicator size="large" color="#0F172A"/>
-            </View>
-        );
+    if (!dataLoaded || !item) {
+        return <View className="flex-1 bg-white" />;
     }
 
     // Image Slider Handler
@@ -79,33 +103,83 @@ export default function ProductDetails() {
     const nights = (startDate && endDate) ? calculateNights(startDate, endDate) : 0;
     const totalPrice = nights * item.pricePerDay;
 
-    const handleReserve = () => {
-        if (isOutOfStock) return;
-
-        if (!startDate || !endDate) {
-            setCalendarOpen(true);
+    const handleReserve = async () => {
+        if (isOutOfStock) {
+            Toast.show({
+                type: 'info',
+                text1: 'Out of Stock',
+                text2: 'This item is currently unavailable.',
+            });
             return;
         }
 
-        // --- MOCK LOGIC  ---
-        const isUserVerified = false;
-
-        if (!isUserVerified) {
-
-            router.push({
-                pathname: "/verification/id-upload",
-                params: {
-                    itemId: item.id,
-                    startDate: startDate,
-                    endDate: endDate,
-                    pricePerDay: item.pricePerDay,
-                    image: item.image,
-                    name: item.name
-                }
+        if (!startDate || !endDate) {
+            setCalendarOpen(true);
+            Toast.show({
+                type: 'info',
+                text1: 'Select Dates',
+                text2: 'Please pick your rental dates first.',
+                position: 'bottom'
             });
+            return;
+        }
 
-        } else {
-            console.log("Proceed to Checkout", { startDate, endDate, item });
+        if (!user) {
+            Toast.show({
+                type: 'error',
+                text1: 'Login Required',
+                text2: 'Please sign in to make a reservation.',
+            });
+            setTimeout(() => router.push("/login"), 1000);
+            return;
+        }
+
+        try {
+            showLoader();
+
+            const isVerified = await checkUserVerification(user.uid);
+
+            const bookingParams = {
+                itemId: item.id,
+                startDate: startDate,
+                endDate: endDate,
+                pricePerDay: item.pricePerDay,
+                image: item.image,
+                name: item.name
+            };
+
+            hideLoader()
+
+            if (isVerified) {
+                console.log("User Verified! Going to Checkout...")
+                router.push({
+                    pathname: "/checkout",
+                    params: bookingParams
+                });
+            } else {
+                Toast.show({
+                    type: 'info',
+                    text1: 'Verification Needed',
+                    text2: 'Please verify your ID to continue.',
+                    position: 'top'
+                });
+
+                setTimeout(() => {
+                    router.push({
+                        pathname: "/verification/id-upload",
+                        params: bookingParams
+                    });
+                }, 1000);
+            }
+
+        } catch (error) {
+            hideLoader();
+            console.error("Reservation Error:", error);
+            Toast.show({
+                type: 'error',
+                text1: 'System Error',
+                text2: 'Could not process your request.',
+            });
         }
     }
 

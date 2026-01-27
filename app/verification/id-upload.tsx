@@ -141,7 +141,7 @@ const IdUpload = () => {
     };
 
     return (
-        <SafeAreaView className={"flex-1 gb-white"}>
+        <SafeAreaView className={"flex-1 bg-white"}>
             <View className={"px-5 py-4 border-b border-gray-100 flex-row items-center"}>
                 <TouchableOpacity onPress={() => router.back()} className={"p-2 -ml-2"}>
                     <Ionicons name="close" size={24} color="black" />
