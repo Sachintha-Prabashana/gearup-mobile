@@ -1,8 +1,9 @@
 import { db, auth  } from "./firebase";
 import { doc, collection, runTransaction, serverTimestamp } from "firebase/firestore";
+import {getDocs, orderBy, query, where} from "@firebase/firestore";
 
 
-export interface BookingData {
+export interface BookingInput {
     itemId: string;
     itemName: string;
     itemImage: string;
@@ -13,7 +14,21 @@ export interface BookingData {
     paymentMethod: 'card' | 'cash';
 }
 
-export const createBooking = async (data: BookingData) => {
+export interface Booking {
+    id: string;
+    itemId: string;
+    itemName: string;
+    itemImage: string;
+    startDate: string;
+    endDate: string;
+    totalPrice: number;
+    status: 'active' | 'completed' | 'cancelled' | 'overdue';
+    bookingRef: string;
+    isReturned: boolean;
+    createdAt: any;
+}
+
+export const createBooking = async (data: BookingInput) => {
     try {
         const user = auth.currentUser;
         if (!user) throw new Error("User not authenticated");
@@ -41,9 +56,11 @@ export const createBooking = async (data: BookingData) => {
                 bookingId: newBookingRef.id,
                 userId: user.uid,
                 ...data,
-                status: 'CONFIRMED',
-                createdAt: serverTimestamp(),
-                isComplete: false
+                status: 'active',
+                isReturned: false,
+                isComplete: false,
+                createdAt: serverTimestamp()
+
             };
 
             transaction.set(newBookingRef, newBooking);
@@ -64,3 +81,80 @@ export const createBooking = async (data: BookingData) => {
         throw error;
     }
 }
+
+export const getUserBookings = async (): Promise<Booking[]> => {
+    try {
+        const user = auth.currentUser;
+        if (!user) return [];
+
+        const bookingsRef = collection(db, "bookings");
+
+        const q = query(
+            bookingsRef,
+            where("userId", "==", user.uid),
+            orderBy("createdAt", "desc")
+        );
+
+        const snapshot = await getDocs(q);
+
+        // Data Mapping
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                itemImage: data.itemImage || data.image,
+            } as Booking;
+        });
+
+    } catch (error) {
+        console.error("Error fetching bookings:", error);
+        return [];
+
+    }
+}
+
+export const returnItem = async (bookingId: string, itemId: string) => {
+    try {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated");
+
+        await runTransaction(db, async (transaction) => {
+            const bookingRef = doc(db, "bookings", bookingId);
+            const itemRef = doc(db, "products", itemId);
+
+            const bookingDoc = await transaction.get(bookingRef);
+            const itemDoc = await transaction.get(itemRef);
+
+            if (!bookingDoc.exists()) throw new Error("Booking not found");
+            if (!itemDoc.exists()) throw new Error("Item not found");
+
+            const bookingData = bookingDoc.data();
+
+            if (bookingData.status === 'completed' || bookingData.isReturned) {
+                throw new Error("Item is already returned.");
+            }
+
+            // A. Booking Update (Complete)
+            transaction.update(bookingRef, {
+                status: 'completed',
+                isReturned: true,
+                returnedAt: serverTimestamp()
+            });
+
+            // B. Stock Update (+1)
+            const currentQty = Number(itemDoc.data().quantity || 0);
+            transaction.update(itemRef, {
+                quantity: currentQty + 1
+            });
+        });
+
+        console.log(" Return Successful");
+        return { success: true };
+
+    } catch (error: any) {
+        console.error(" Error returning item:", error);
+        throw new Error(error.message || "Failed to return item");
+    }
+};
+
