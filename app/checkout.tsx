@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native'
-import React, {useState} from 'react'
+import {View, Text, TouchableOpacity, ScrollView, Image, Alert, Modal} from 'react-native'
+import React, {useEffect, useState} from 'react'
 
 import { useLoader } from "@/hooks/useLoader";
 import Toast from 'react-native-toast-message';
@@ -8,16 +8,46 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { createBooking } from "@/service/bookingService";
 import { useStripe } from '@stripe/stripe-react-native';
+import LocationPickerModal from "@/components/LocationPickerModal";
+import { getUserProfile, updateUserProfile } from "@/service/userService";
+import { useAuth } from "@/hooks/useAuth";
 
 const Checkout = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const { user } = useAuth();
     // initialize stripe hooks
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
     const { itemId, startDate, endDate, pricePerDay, image, name } = params;
     const { showLoader, hideLoader } = useLoader();
     const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
+    const [userAddress, setUserAddress] = useState<string | null>(null);
+    const [isLocationModalVisible, setLocationModalVisible] = useState(false);
+    const [isAlertVisible, setAlertVisible] = useState(false);
+
+    useEffect(() => {
+        let isMounted = true;
+        const checkAddress = async () => {
+            if (user) {
+                try {
+
+                    const profile: any = await getUserProfile();
+
+                    if (isMounted && profile?.address) {
+                        setUserAddress(profile.address);
+                    }
+                } catch (error) {
+                    console.error("Error loading address:", error);
+                }
+            }
+        };
+        checkAddress();
+
+        // Cleanup function
+        return () => { isMounted = false; };
+
+    }, [user]);
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
@@ -147,12 +177,43 @@ const Checkout = () => {
     }
 
     const handlePress = () => {
+        if (!userAddress) {
+            setAlertVisible(true);
+            return;
+        }
         if (paymentMethod === 'card') {
             openPaymentSheet();
         } else {
             handleConfirmBooking(false);
         }
     };
+
+    const handleLocationSelect = async (details: { address: string; city: string; lat: number; lng: number }) => {
+        try {
+            showLoader()
+
+            await updateUserProfile({
+                address: details.address,
+                city: details.city,
+                coordinates: {
+                    lat: details.lat,
+                    lng: details.lng
+                }
+            })
+
+            setUserAddress(details.address);
+            hideLoader()
+
+            Toast.show({ type: 'success', text1: 'Location Saved', text2: 'You can now proceed with payment.' });
+
+            // Auto-trigger payment/booking after saving location? (Optional)
+            handlePress();
+
+        } catch (error) {
+            hideLoader();
+            Toast.show({ type: 'error', text1: 'Save Failed', text2: 'Could not save location.' });
+        }
+    }
 
     return (
         <SafeAreaView className={"flex-1 bg-white"} edges={["top"]}>
@@ -201,6 +262,30 @@ const Checkout = () => {
                             <Text className="text-slate-600 mt-1">{nights} nights</Text>
                         </View>
                     </View>
+                </View>
+
+                {/* --- LOCATION CHECK (Visual Feedback) --- */}
+                <View className="mb-8 border-b border-gray-100 pb-6">
+                    <Text className="text-xl font-bold text-slate-900 mb-4 font-sans">Your Location</Text>
+                    {userAddress ? (
+                        <TouchableOpacity
+                            onPress={() => setLocationModalVisible(true)}
+                            className="flex-row items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200"
+                        >
+                            <Ionicons name="location" size={24} color="#0F172A" />
+                            <Text className="flex-1 text-slate-900 font-medium" numberOfLines={2}>{userAddress}</Text>
+                            <Text className="text-xs font-bold text-blue-600">Change</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity
+                            onPress={() => setLocationModalVisible(true)}
+                            className="flex-row items-center gap-3 bg-red-50 p-4 rounded-xl border border-red-100"
+                        >
+                            <Ionicons name="alert-circle" size={24} color="#EF4444" />
+                            <Text className="flex-1 text-red-700 font-bold">Location Required</Text>
+                            <Text className="text-xs font-bold text-red-700 underline">Add Now</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 {/* --- 3. PAYMENT METHOD SELECTION --- */}
@@ -271,14 +356,72 @@ const Checkout = () => {
             {/* --- FOOTER: Confirm Button --- */}
             <View className="p-5 border-t border-gray-100 bg-white shadow-lg">
                 <TouchableOpacity
-                    className="bg-[#FF385C] w-full py-4 rounded-xl items-center active:scale-[0.98] transition-all flex-row justify-center"
+                    className={`w-full py-4 rounded-xl items-center active:scale-[0.98] transition-all flex-row justify-center ${!userAddress ? 'bg-slate-400' : 'bg-[#FF385C]'}`}
                     onPress={handlePress}
+                    // disabled={!userAddress}
                 >
                     <Text className="text-white font-bold text-lg font-sans">
-                        {paymentMethod === 'card' ? `Pay Rs. ${totalPrice.toLocaleString()}` : 'Confirm Booking'}
+                        {!userAddress ? 'Add Location to Continue' : (paymentMethod === 'card' ? `Pay Rs. ${totalPrice.toLocaleString()}` : 'Confirm Booking')}
                     </Text>
                 </TouchableOpacity>
             </View>
+
+            {/*  CUSTOM ALERT MODAL (Industry Standard Design) */}
+            <Modal
+                transparent={true}
+                visible={isAlertVisible}
+                animationType="fade"
+                onRequestClose={() => setAlertVisible(false)}
+            >
+                {/* Background Overlay (Dimmed) */}
+                <View className="flex-1 backgroundColor-black/50 justify-center items-center px-6 bg-black/60">
+
+                    {/* Modal Content */}
+                    <View className="bg-white w-full rounded-3xl p-6 items-center shadow-2xl">
+
+                        {/* Icon Circle */}
+                        <View className="w-16 h-16 bg-red-50 rounded-full items-center justify-center mb-4">
+                            <Ionicons name="location" size={32} color="#EF4444" />
+                        </View>
+
+                        {/* Text Content */}
+                        <Text className="text-xl font-bold text-slate-900 text-center mb-2">
+                            Location Required
+                        </Text>
+                        <Text className="text-slate-500 text-center mb-6 leading-5">
+                            We need your address to arrange the pickup/delivery. Please add a location to proceed.
+                        </Text>
+
+                        {/* Buttons */}
+                        <View className="w-full gap-3">
+                            {/* Primary Button (Add Location) */}
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setAlertVisible(false);
+                                    setLocationModalVisible(true); // Open the Map
+                                }}
+                                className="bg-[#FF385C] w-full py-3.5 rounded-xl items-center"
+                            >
+                                <Text className="text-white font-bold text-base">Add Location</Text>
+                            </TouchableOpacity>
+
+                            {/* Secondary Button (Cancel) */}
+                            <TouchableOpacity
+                                onPress={() => setAlertVisible(false)}
+                                className="bg-slate-100 w-full py-3.5 rounded-xl items-center"
+                            >
+                                <Text className="text-slate-700 font-bold text-base">Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            <LocationPickerModal
+                isVisible={isLocationModalVisible}
+                onClose={() => setLocationModalVisible(false)}
+                onConfirm={handleLocationSelect}
+            />
 
         </SafeAreaView>
     )
