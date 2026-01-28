@@ -171,7 +171,7 @@ export default function Profile() {
                         <TouchableOpacity onPress={handleProfilePicUpdate} activeOpacity={0.9} className="relative mb-4">
                             <View className="p-1 bg-white/20 rounded-full backdrop-blur-sm">
                                 <Image
-                                    source={{ uri: userData?.photoURL || "https://i.pravatar.cc/300" }}
+                                    source={{ uri: userData?.photoURL }}
                                     className={`w-28 h-28 rounded-full bg-slate-800 ${isAvatarUploading ? 'opacity-50' : ''}`}
                                 />
                             </View>
@@ -194,6 +194,14 @@ export default function Profile() {
                         <Text className="text-slate-400 text-sm font-medium mb-4">
                             {userData?.email}
                         </Text>
+
+                        <View className="flex-row items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full mb-4 border border-white/5 backdrop-blur-md">
+                            <Ionicons name="location-sharp" size={12} color="#94a3b8" />
+                            <Text className="text-slate-200 text-xs font-semibold">
+
+                                {userData?.city || userData?.address || "Colombo, Sri Lanka"}
+                            </Text>
+                        </View>
 
                         {/* Verification Badge (Glass) */}
                         <TouchableOpacity

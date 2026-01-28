@@ -23,7 +23,6 @@ export const register = async (fullName: string, email: string, password: string
     })
     return userCred.user
 
-
 }
 
 export const checkUserVerification = async (uid: string) => {
