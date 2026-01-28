@@ -1,6 +1,7 @@
 import { db, auth } from "./firebase"
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {doc, getCountFromServer, getDoc, updateDoc} from "firebase/firestore";
 import { updateProfile } from "@firebase/auth";
+import {collection, query, where} from "@firebase/firestore";
 
 export const getUserProfile = async () => {
     try {
@@ -80,6 +81,27 @@ export const updateUserProfileImage = async (localUri: string) => {
         throw error;
     }
 }
+
+export const getUserStats = async (userId: string) => {
+    try {
+        // 1. Rentals
+        const bookingsRef = collection(db, "bookings");
+        const bookingsQuery = query(bookingsRef, where("userId", "==", userId));
+        const bookingsSnapshot = await getCountFromServer(bookingsQuery);
+        const rentalsCount = bookingsSnapshot.data().count;
+
+        // 2. Saved Items
+        const favoritesRef = collection(db, "users", userId, "favorites");
+        const favoritesSnapshot = await getCountFromServer(favoritesRef);
+        const savedCount = favoritesSnapshot.data().count;
+
+        return { rentals: rentalsCount, saved: savedCount };
+
+    } catch (error) {
+        console.error("Error fetching user stats:", error);
+        return { rentals: 0, saved: 0 };
+    }
+};
 
 export const logoutUser = async () => {
     try {
