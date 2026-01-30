@@ -8,21 +8,24 @@ import {
     SafeAreaView,
     StatusBar
 } from 'react-native';
+import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 
-const SplashScreen = () => {
+const OnboardingScreen = () => {
+    const router = useRouter();
+
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
 
-            {/* Background Gradient for that professional depth */}
+            {/* Background Lighting Effect */}
             <LinearGradient
                 colors={['#1A1A1A', '#000000']}
-                style={styles.background}
+                style={StyleSheet.absoluteFillObject}
             />
 
             <SafeAreaView style={styles.content}>
-                {/* Header / Brand Name */}
+                {/* Top Branding */}
                 <View style={styles.header}>
                     <Text style={styles.brandName}>CamMart</Text>
                 </View>
@@ -33,15 +36,15 @@ const SplashScreen = () => {
                         Capture Life in{"\n"}Every Frame
                     </Text>
 
-                    {/* Main Product Image (Lens) */}
                     <Image
-                        source={{ uri: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1000&auto=format&fit=crop' }}
+                        source={require('@/assets/images/onboarding-lens-removebg-preview.png')}
+                        // source={{ uri: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1000&auto=format&fit=crop' }}
                         style={styles.lensImage}
                         resizeMode="contain"
                     />
                 </View>
 
-                {/* Footer Section */}
+                {/* Action Footer */}
                 <View style={styles.footer}>
                     <Text style={styles.description}>
                         Discover, Compare, and Buy the Best Cameras and Accessories at Unbeatable Prices.
@@ -50,7 +53,7 @@ const SplashScreen = () => {
                     <TouchableOpacity
                         style={styles.button}
                         activeOpacity={0.8}
-                        onPress={() => console.log('Get Started Pressed')}
+                        onPress={() => router.push("/login")}
                     >
                         <Text style={styles.buttonText}>Get Started</Text>
                     </TouchableOpacity>
@@ -65,25 +68,18 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#000',
     },
-    background: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        top: 0,
-        height: '100%',
-    },
     content: {
         flex: 1,
-        paddingHorizontal: 30,
+        paddingHorizontal: 25,
         justifyContent: 'space-between',
     },
     header: {
-        marginTop: 20,
+        marginTop: 10,
     },
     brandName: {
         color: '#FFFFFF',
         fontSize: 18,
-        fontWeight: '600',
+        fontWeight: '700',
         letterSpacing: 0.5,
     },
     heroSection: {
@@ -93,16 +89,15 @@ const styles = StyleSheet.create({
     },
     mainTitle: {
         color: '#FFFFFF',
-        fontSize: 42,
-        fontWeight: 'bold',
-        lineHeight: 50,
+        fontSize: 40,
+        fontWeight: '800',
+        lineHeight: 48,
         marginBottom: 20,
     },
     lensImage: {
-        width: '110%',
-        height: 350,
+        width: '100%',
+        height: 320,
         alignSelf: 'center',
-        // In a real app, you'd use a PNG with a lime-green glow effect
     },
     footer: {
         flex: 1,
@@ -110,22 +105,22 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
     description: {
-        color: '#A0A0A0',
-        fontSize: 14,
+        color: '#999999',
+        fontSize: 15,
         lineHeight: 22,
         marginBottom: 30,
-        textAlign: 'left',
+        maxWidth: '90%',
     },
     button: {
-        backgroundColor: '#B4F05F', // The signature lime green
+        backgroundColor: '#B4F05F', // Lime green from your screenshot
         paddingVertical: 18,
-        borderRadius: 15,
+        borderRadius: 16,
         alignItems: 'center',
         shadowColor: '#B4F05F',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        elevation: 8,
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
     },
     buttonText: {
         color: '#000000',
@@ -134,4 +129,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SplashScreen;
+export default OnboardingScreen;

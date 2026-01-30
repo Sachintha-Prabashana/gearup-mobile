@@ -10,244 +10,290 @@ import {
     ScrollView,
     TouchableWithoutFeedback,
     Keyboard,
-    Image, Alert,
+    Image,
+    Alert,
+    StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useLoader } from "@/hooks/useLoader";
 import { register } from '@/service/authService';
+import { LinearGradient } from 'expo-linear-gradient'; // Ensure expo-linear-gradient is installed
 
 export default function SignUp() {
     const router = useRouter();
-    const { showLoader, hideLoader, isLoading } = useLoader()
+    const { showLoader, hideLoader, isLoading } = useLoader();
 
     // Form States
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     // UI States
     const [showPassword, setShowPassword] = useState(false);
-    const [focusedInput, setFocusedInput] = useState(null);
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
     const handleRegister = async () => {
-        if (isLoading) {
-            return; // Prevent multiple submissions
-        }
+        if (isLoading) return;
 
         if (!fullName || !email || !password || !confirmPassword) {
-            Alert.alert("Please fill all fields")
-            return
+            Alert.alert("Please fill all fields");
+            return;
         }
 
         if (password !== confirmPassword) {
-            Alert.alert("Passwords do not match")
-            return
+            Alert.alert("Passwords do not match");
+            return;
         }
 
         try {
-            showLoader()
-            await register(fullName, email, password)
-            Alert.alert("Account created successfully")
-            router.replace("/(auth)/login")
+            showLoader();
+            await register(fullName, email, password);
+            Alert.alert("Account created successfully");
+            router.replace("/(auth)/login");
         } catch (error) {
-            Alert.alert("Registration Failed")
-
+            Alert.alert("Registration Failed");
         } finally {
-            hideLoader()
+            hideLoader();
         }
-
-    }
+    };
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <SafeAreaView className="flex-1 bg-white">
-                <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <View style={{ flex: 1, backgroundColor: '#000000' }}>
+                <StatusBar barStyle="light-content" />
 
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    className="flex-1"
-                >
-                    <ScrollView
-                        className="flex-1 px-6"
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+                {/* Modern Dark Gradient Background */}
+                <LinearGradient
+                    colors={['#121212', '#000000']}
+                    style={StyleSheet.absoluteFillObject}
+                />
+
+                <SafeAreaView style={{ flex: 1 }}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        style={{ flex: 1 }}
                     >
-
-                        {/* --- HEADER --- */}
-                        <View className="items-center mb-8">
-                            <Text className="text-3xl font-extrabold text-zinc-900 tracking-tight text-center mb-3">
-                                Create an Account
-                            </Text>
-                            <Text className="text-zinc-500 text-base text-center max-w-[280px]">
-                                Join GearUp today and start your creative journey.
-                            </Text>
-                        </View>
-
-                        {/* --- SOCIAL SIGNUP --- */}
-                        <View className="gap-2 mb-8">
-                            <TouchableOpacity className="flex-row items-center justify-center h-14 border border-zinc-300 rounded-xl bg-white active:bg-zinc-50 transition-colors shadow-sm relative">
-                                <Image
-                                    source={{ uri: "https://cdn.simpleicons.org/facebook/1877F2" }}
-                                    style={{ width: 24, height: 24, position: "absolute", left: 20 }}
-                                    resizeMode="contain"
-                                />
-                                <Text className="text-base font-semibold text-zinc-900">
-                                    Sign up with Facebook
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity className="flex-row items-center justify-center h-14 border border-zinc-300 rounded-xl bg-white active:bg-zinc-50 transition-colors shadow-sm relative">
-                                <Image
-                                    source={require('../../assets/icons/google.png')}
-                                    style={{ width: 24, height: 24, position: 'absolute', left: 20 }}
-                                    resizeMode="contain"
-                                />
-                                <Text className="text-base font-semibold text-zinc-900">
-                                    Sign up with Google
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* --- DIVIDER --- */}
-                        <View className="flex-row items-center mb-8">
-                            <View className="flex-1 h-[1px] bg-zinc-200" />
-                            <Text className="mx-4 text-sm text-zinc-400 font-medium">or register with email</Text>
-                            <View className="flex-1 h-[1px] bg-zinc-200" />
-                        </View>
-
-                        {/* --- FORM inputs --- */}
-                        <View className="space-y-5 mb-8">
-
-                            {/* Full Name Input */}
-                            <View>
-                                <Text className="text-sm font-semibold text-zinc-700 mb-2 ml-1">Full Name</Text>
-                                <View
-                                    className={`h-14 border rounded-xl px-4 flex-row items-center bg-white transition-all ${
-                                        focusedInput === 'fullname' ? 'border-zinc-900 shadow-sm' : 'border-zinc-300'
-                                    }`}
-                                >
-                                    <Ionicons name="person-outline" size={20} color={focusedInput === 'fullname' ? "#18181b" : "#71717a"} style={{ marginRight: 12 }} />
-                                    <TextInput
-                                        className="flex-1 text-base text-zinc-900 h-full font-medium"
-                                        placeholder="John Doe"
-                                        placeholderTextColor="#A1A1AA"
-                                        value={fullName}
-                                        onChangeText={setFullName}
-                                    />
-                                </View>
-                            </View>
-
-                            {/* Email Input */}
-                            <View>
-                                <Text className="text-sm font-semibold text-zinc-700 mb-2 ml-1">Email Address</Text>
-                                <View
-                                    className={`h-14 border rounded-xl px-4 flex-row items-center bg-white transition-all ${
-                                        focusedInput === 'email' ? 'border-zinc-900 shadow-sm' : 'border-zinc-300'
-                                    }`}
-                                >
-                                    <Ionicons name="mail-outline" size={20} color={focusedInput === 'email' ? "#18181b" : "#71717a"} style={{ marginRight: 12 }} />
-                                    <TextInput
-                                        className="flex-1 text-base text-zinc-900 h-full font-medium"
-                                        placeholder="name@example.com"
-                                        placeholderTextColor="#A1A1AA"
-                                        value={email}
-                                        onChangeText={setEmail}
-                                        autoCapitalize="none"
-                                        keyboardType="email-address"
-                                    />
-                                </View>
-                            </View>
-
-                            {/* Password Input */}
-                            <View>
-                                <Text className="text-sm font-semibold text-zinc-700 mb-2 ml-1">Password</Text>
-                                <View
-                                    className={`h-14 border rounded-xl px-4 flex-row items-center bg-white transition-all ${
-                                        focusedInput === 'password' ? 'border-zinc-900 shadow-sm' : 'border-zinc-300'
-                                    }`}
-                                >
-                                    <Ionicons name="lock-closed-outline" size={20} color={focusedInput === 'password' ? "#18181b" : "#71717a"} style={{ marginRight: 12 }} />
-                                    <TextInput
-                                        className="flex-1 text-base text-zinc-900 h-full font-medium"
-                                        placeholder="Create a password"
-                                        placeholderTextColor="#A1A1AA"
-                                        secureTextEntry={!showPassword}
-                                        value={password}
-                                        onChangeText={setPassword}
-                                    />
-                                    <TouchableOpacity
-                                        onPress={() => setShowPassword(!showPassword)}
-                                        className="p-2"
-                                    >
-                                        <Ionicons
-                                            name={showPassword ? "eye-off-outline" : "eye-outline"}
-                                            size={22}
-                                            color={focusedInput === 'password' ? "#18181b" : "#71717a"}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
-                            {/* Confirm Password Input */}
-                            <View>
-                                <Text className="text-sm font-semibold text-zinc-700 mb-2 ml-1">Confirm Password</Text>
-                                <View
-                                    className={`h-14 border rounded-xl px-4 flex-row items-center bg-white transition-all ${
-                                        focusedInput === 'confirmPassword' ? 'border-zinc-900 shadow-sm' : 'border-zinc-300'
-                                    }`}
-                                >
-                                    <Ionicons
-                                        name="lock-closed-outline"
-                                        size={20}
-                                        color={focusedInput === 'confirmPassword' ? "#18181b" : "#71717a"}
-                                        style={{ marginRight: 12 }}
-                                    />
-                                    <TextInput
-                                        className="flex-1 text-base text-zinc-900 h-full font-medium"
-                                        placeholder="Re-enter your password"
-                                        placeholderTextColor="#A1A1AA"
-                                        secureTextEntry={!showConfirmPassword}
-                                        value={confirmPassword}
-                                        onChangeText={setConfirmPassword}
-
-                                    />
-                                    <TouchableOpacity
-                                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="p-2"
-                                    >
-                                        <Ionicons
-                                            name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                                            size={22}
-                                            color={focusedInput === 'confirmPassword' ? "#18181b" : "#71717a"}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </View>
-
-                        {/* --- SIGN UP BUTTON --- */}
-                        <TouchableOpacity
-                            className="w-full h-14 bg-zinc-900 rounded-xl items-center justify-center shadow-md shadow-zinc-400/20 active:bg-black active:scale-[0.99] transition-all"
-                            onPress={handleRegister}
+                        <ScrollView
+                            contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 30 }}
+                            showsVerticalScrollIndicator={false}
                         >
-                            <Text className="text-white text-lg font-bold tracking-wide">Sign Up</Text>
-                        </TouchableOpacity>
+                            {/* --- HEADER --- */}
+                            <View style={{ marginTop: 40, marginBottom: 35 }}>
+                                <Text style={{ color: '#FFFFFF', fontSize: 38, fontWeight: '700', letterSpacing: -1 }}>
+                                    Create Account
+                                </Text>
+                                <Text style={{ color: '#A1A1AA', fontSize: 16, marginTop: 8, lineHeight: 24 }}>
+                                    Join GearUp today and start your creative journey.
+                                </Text>
+                            </View>
 
-                        {/* --- FOOTER --- */}
-                        <View className="flex-row justify-center mt-8 mb-4">
-                            <Text className="text-zinc-500 font-medium text-base">Already have an account? </Text>
-                            <TouchableOpacity onPress={() => router.push('/login')}>
-                                <Text className="text-zinc-900 font-bold text-base underline decoration-zinc-300">Log in</Text>
+                            {/* --- FORM INPUTS --- */}
+                            <View style={{ gap: 20 }}>
+                                {/* Full Name Input */}
+                                <View>
+                                    <Text style={styles.inputLabel}>Full Name</Text>
+                                    <View style={[styles.inputContainer, focusedInput === 'fullname' && styles.inputFocused]}>
+                                        <Ionicons name="person-outline" size={22} color={focusedInput === 'fullname' ? "#B4F05F" : "#71717A"} />
+                                        <TextInput
+                                            style={styles.textInput}
+                                            placeholder="John Doe"
+                                            placeholderTextColor="#52525B"
+                                            value={fullName}
+                                            onChangeText={setFullName}
+                                            onFocus={() => setFocusedInput('fullname')}
+                                            onBlur={() => setFocusedInput(null)}
+                                        />
+                                    </View>
+                                </View>
+
+                                {/* Email Input */}
+                                <View>
+                                    <Text style={styles.inputLabel}>Email Address</Text>
+                                    <View style={[styles.inputContainer, focusedInput === 'email' && styles.inputFocused]}>
+                                        <Ionicons name="mail-outline" size={22} color={focusedInput === 'email' ? "#B4F05F" : "#71717A"} />
+                                        <TextInput
+                                            style={styles.textInput}
+                                            placeholder="name@example.com"
+                                            placeholderTextColor="#52525B"
+                                            value={email}
+                                            onChangeText={setEmail}
+                                            autoCapitalize="none"
+                                            keyboardType="email-address"
+                                            onFocus={() => setFocusedInput('email')}
+                                            onBlur={() => setFocusedInput(null)}
+                                        />
+                                    </View>
+                                </View>
+
+                                {/* Password Input */}
+                                <View>
+                                    <Text style={styles.inputLabel}>Password</Text>
+                                    <View style={[styles.inputContainer, focusedInput === 'password' && styles.inputFocused]}>
+                                        <Ionicons name="lock-closed-outline" size={22} color={focusedInput === 'password' ? "#B4F05F" : "#71717A"} />
+                                        <TextInput
+                                            style={styles.textInput}
+                                            placeholder="Create a password"
+                                            placeholderTextColor="#52525B"
+                                            secureTextEntry={!showPassword}
+                                            value={password}
+                                            onChangeText={setPassword}
+                                            onFocus={() => setFocusedInput('password')}
+                                            onBlur={() => setFocusedInput(null)}
+                                        />
+                                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                                            <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#71717A" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                {/* Confirm Password Input */}
+                                <View>
+                                    <Text style={styles.inputLabel}>Confirm Password</Text>
+                                    <View style={[styles.inputContainer, focusedInput === 'confirm' && styles.inputFocused]}>
+                                        <Ionicons name="lock-closed-outline" size={22} color={focusedInput === 'confirm' ? "#B4F05F" : "#71717A"} />
+                                        <TextInput
+                                            style={styles.textInput}
+                                            placeholder="Re-enter your password"
+                                            placeholderTextColor="#52525B"
+                                            secureTextEntry={!showConfirmPassword}
+                                            value={confirmPassword}
+                                            onChangeText={setConfirmPassword}
+                                            onFocus={() => setFocusedInput('confirm')}
+                                            onBlur={() => setFocusedInput(null)}
+                                        />
+                                        <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                            <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#71717A" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* --- SIGN UP BUTTON --- */}
+                            <TouchableOpacity
+                                style={styles.primaryButton}
+                                activeOpacity={0.8}
+                                onPress={handleRegister}
+                            >
+                                <Text style={styles.primaryButtonText}>Sign Up</Text>
                             </TouchableOpacity>
-                        </View>
 
-                    </ScrollView>
-                </KeyboardAvoidingView>
-            </SafeAreaView>
+                            {/* --- DIVIDER --- */}
+                            <View style={styles.dividerContainer}>
+                                <View style={styles.dividerLine} />
+                                <Text style={styles.dividerText}>or join with</Text>
+                                <View style={styles.dividerLine} />
+                            </View>
+
+                            {/* --- SOCIAL BUTTONS --- */}
+                            <View style={{ flexDirection: 'row', gap: 16 }}>
+                                <TouchableOpacity style={styles.socialButton}>
+                                    <Ionicons name="logo-facebook" size={24} color="#FFFFFF" />
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.socialButton}>
+                                    <Image
+                                        source={require('../../assets/icons/google.png')}
+                                        style={{ width: 24, height: 24 }}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* --- FOOTER --- */}
+                            <View style={styles.footer}>
+                                <Text style={{ color: '#71717A', fontSize: 16 }}>Already have an account? </Text>
+                                <TouchableOpacity onPress={() => router.push('/login')}>
+                                    <Text style={{ color: '#B4F05F', fontSize: 16, fontWeight: '700' }}>Log in</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                        </ScrollView>
+                    </KeyboardAvoidingView>
+                </SafeAreaView>
+            </View>
         </TouchableWithoutFeedback>
     );
 }
+
+const styles = StyleSheet.create({
+    inputLabel: {
+        color: '#A1A1AA',
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 8,
+        marginLeft: 4
+    },
+    inputContainer: {
+        height: 64,
+        backgroundColor: '#1A1A1A',
+        borderRadius: 20,
+        borderWidth: 1.5,
+        borderColor: '#2A2A2A',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20
+    },
+    inputFocused: {
+        borderColor: '#B4F05F',
+    },
+    textInput: {
+        flex: 1,
+        color: '#FFFFFF',
+        fontSize: 16,
+        marginLeft: 12,
+        fontWeight: '500'
+    },
+    primaryButton: {
+        height: 64,
+        backgroundColor: '#B4F05F',
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 40,
+        shadowColor: '#B4F05F',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 5
+    },
+    primaryButtonText: {
+        color: '#000000',
+        fontSize: 18,
+        fontWeight: '800'
+    },
+    dividerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 35
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: '#2A2A2A'
+    },
+    dividerText: {
+        color: '#52525B',
+        marginHorizontal: 16,
+        fontSize: 14,
+        fontWeight: '600'
+    },
+    socialButton: {
+        flex: 1,
+        height: 64,
+        backgroundColor: '#1A1A1A',
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#2A2A2A'
+    },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 40,
+        paddingBottom: 10
+    }
+});
