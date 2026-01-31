@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -8,14 +8,14 @@ import {
     Dimensions,
     FlatList,
     StatusBar,
-    Platform, ActivityIndicator
+    Platform,
+    StyleSheet
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 
-// Import Data (Service)
-import { gearItems } from "@/constants/gearData";
+// Import Services & Components
 import ReviewsSection from "@/components/Product/ReviewSection";
 import LocationSection from "@/components/Product/LocationSection";
 import DateSelectModal from "@/components/Product/DateSelectModal";
@@ -25,7 +25,6 @@ import { useLoader } from "@/hooks/useLoader";
 import { checkUserVerification } from "@/service/authService";
 import { checkIsFavorite, toggleFavorite } from "@/service/favoriteService";
 import Toast from 'react-native-toast-message';
-
 
 const { width } = Dimensions.get('window');
 
@@ -42,7 +41,6 @@ export default function ProductDetails() {
     const [isCalendarOpen, setCalendarOpen] = useState(false);
     const [startDate, setStartDate] = useState<string | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
-    const [verifying, setVerifying] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
 
     useEffect(() => {
@@ -51,32 +49,19 @@ export default function ProductDetails() {
                 try {
                     showLoader();
                     const data = await getGearById(id as string);
-
                     if (data) {
                         setItem(data);
-
-                        // Check if user has liked this item
                         if (user) {
                             const isFav = await checkIsFavorite(id as string);
                             setIsLiked(isFav);
                         }
-
                         setDataLoaded(true);
                     } else {
-                        Toast.show({
-                            type: 'error',
-                            text1: 'Item Not Found',
-                            text2: 'Could not load product details.',
-                        });
+                        Toast.show({ type: 'error', text1: 'Item Not Found' });
                         router.back();
                     }
                 } catch (error) {
                     console.error(error);
-                    Toast.show({
-                        type: 'error',
-                        text1: 'Connection Error',
-                        text2: 'Something went wrong while loading.',
-                    });
                 } finally {
                     hideLoader();
                 }
@@ -85,93 +70,57 @@ export default function ProductDetails() {
         fetchData();
     }, [id, user]);
 
-    //  4. Handle Like Toggle Logic
     const handleToggleFavorite = async () => {
         if (!user) {
-            Toast.show({
-                type: 'error',
-                text1: 'Login Required',
-                text2: 'Please sign in to save items.',
-                position: 'bottom'
-            });
+            Toast.show({ type: 'error', text1: 'Login Required', position: 'bottom' });
             return;
         }
-
-        // Optimistic Update
         const previousState = isLiked;
         setIsLiked(!isLiked);
-
         try {
-            await toggleFavorite(item); // DB call
+            await toggleFavorite(item);
         } catch (error) {
             setIsLiked(previousState);
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Could not update favorites.' });
+            Toast.show({ type: 'error', text1: 'Error', text2: 'Update failed' });
         }
     };
 
     if (!dataLoaded || !item) {
-        return <View className="flex-1 bg-white" />;
+        return <View style={{ flex: 1, backgroundColor: '#000000' }} />;
     }
 
-    // Image Slider Handler
     const onScroll = (event: any) => {
         const slideSize = event.nativeEvent.layoutMeasurement.width;
         const index = event.nativeEvent.contentOffset.x / slideSize;
         setActiveSlide(Math.round(index));
     };
 
-    const calculateNights = (start: string, end:string) => {
+    const calculateNights = (start: string, end: string) => {
         if (!start || !end) return 0;
         const d1 = new Date(start);
         const d2 = new Date(end);
-        const diffTime = Math.abs(d2.getTime() - d1.getTime());
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return Math.ceil(Math.abs(d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+    };
 
-    }
-
-    // Stock Check Logic
     const quantity = Number(item.quantity || 0);
     const isOutOfStock = quantity === 0;
-
     const nights = (startDate && endDate) ? calculateNights(startDate, endDate) : 0;
     const totalPrice = nights * item.pricePerDay;
 
     const handleReserve = async () => {
-        if (isOutOfStock) {
-            Toast.show({
-                type: 'info',
-                text1: 'Out of Stock',
-                text2: 'This item is currently unavailable.',
-            });
-            return;
-        }
-
+        if (isOutOfStock) return;
         if (!startDate || !endDate) {
             setCalendarOpen(true);
-            Toast.show({
-                type: 'info',
-                text1: 'Select Dates',
-                text2: 'Please pick your rental dates first.',
-                position: 'bottom'
-            });
             return;
         }
-
         if (!user) {
-            Toast.show({
-                type: 'error',
-                text1: 'Login Required',
-                text2: 'Please sign in to make a reservation.',
-            });
-            setTimeout(() => router.push("/login"), 1000);
+            router.push("/login");
             return;
         }
 
         try {
             showLoader();
-
             const isVerified = await checkUserVerification(user.uid);
-
             const bookingParams = {
                 itemId: item.id,
                 startDate: startDate,
@@ -180,47 +129,27 @@ export default function ProductDetails() {
                 image: item.image,
                 name: item.name
             };
-
-            hideLoader()
+            hideLoader();
 
             if (isVerified) {
-                console.log("User Verified! Going to Checkout...")
-                router.push({
-                    pathname: "/checkout",
-                    params: bookingParams
-                });
+                router.push({ pathname: "/checkout", params: bookingParams });
             } else {
-                Toast.show({
-                    type: 'info',
-                    text1: 'Verification Needed',
-                    text2: 'Please verify your ID to continue.',
-                    position: 'top'
-                });
-
+                Toast.show({ type: 'info', text1: 'Verification Needed' });
                 setTimeout(() => {
-                    router.push({
-                        pathname: "/verification/id-upload",
-                        params: bookingParams
-                    });
+                    router.push({ pathname: "/verification/id-upload", params: bookingParams });
                 }, 1000);
             }
-
         } catch (error) {
             hideLoader();
-            console.error("Reservation Error:", error);
-            Toast.show({
-                type: 'error',
-                text1: 'System Error',
-                text2: 'Could not process your request.',
-            });
+            console.error(error);
         }
-    }
+    };
 
     return (
-        <View className="flex-1 bg-white">
+        <View style={{ flex: 1, backgroundColor: '#000000' }}>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }}>
 
                 {/* --- A. HERO IMAGE SLIDER --- */}
                 <View className="relative">
@@ -233,236 +162,189 @@ export default function ProductDetails() {
                         renderItem={({ item: imageUrl }) => (
                             <Image
                                 source={{ uri: imageUrl }}
-                                style={{ width: width, height: 350 }}
+                                style={{ width: width, height: 360 }} // Reduced height to prevent overlapping title
                                 resizeMode="cover"
                             />
                         )}
                         keyExtractor={(_, index) => index.toString()}
                     />
 
-                    {/* Stock Overlay if Out of Stock */}
+                    <LinearGradient colors={['rgba(0,0,0,0.7)', 'transparent']} style={styles.topGradient} />
+                    <LinearGradient colors={['transparent', '#000000']} style={styles.bottomGradient} />
+
                     {isOutOfStock && (
-                        <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/40 items-center justify-center z-10">
-                            <View className="bg-red-500 px-6 py-2 rounded-full transform scale-125">
-                                <Text className="text-white font-bold text-lg uppercase">Sold Out</Text>
+                        <View className="absolute inset-0 bg-black/60 items-center justify-center z-10">
+                            <View className="bg-red-600 px-8 py-3 rounded-full">
+                                <Text className="text-white font-black text-lg uppercase tracking-widest">Out of Stock</Text>
                             </View>
                         </View>
                     )}
 
                     {/* Navigation Buttons */}
-                    <View className="absolute top-12 left-5 right-5 flex-row justify-between items-center z-10">
+                    <View className="absolute top-14 left-5 right-5 flex-row justify-between items-center z-20">
                         <TouchableOpacity
                             onPress={() => router.back()}
-                            className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-md active:scale-95 transition-all"
+                            className="w-11 h-11 bg-black/40 rounded-full items-center justify-center border border-white/10"
                         >
-                            <Ionicons name="chevron-back" size={22} color="black" />
+                            <Ionicons name="chevron-back" size={24} color="white" />
                         </TouchableOpacity>
 
                         <View className="flex-row gap-3">
-                            <TouchableOpacity className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-md active:scale-95">
-                                <Ionicons name="share-outline" size={20} color="black" />
+                            <TouchableOpacity className="w-11 h-11 bg-black/40 rounded-full items-center justify-center border border-white/10">
+                                <Ionicons name="share-outline" size={22} color="white" />
                             </TouchableOpacity>
-
-                            {/*  5. Heart Button Updated with Logic */}
                             <TouchableOpacity
                                 onPress={handleToggleFavorite}
-                                className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-md active:scale-95 transition-all"
+                                className="w-11 h-11 bg-black/40 rounded-full items-center justify-center border border-white/10"
                             >
                                 <Ionicons
                                     name={isLiked ? "heart" : "heart-outline"}
-                                    size={20}
-                                    color={isLiked ? "#EF4444" : "black"}
+                                    size={22}
+                                    color={isLiked ? "#FF3B30" : "white"}
                                 />
                             </TouchableOpacity>
                         </View>
                     </View>
 
                     {/* Page Counter */}
-                    <View className="absolute bottom-5 right-5 bg-black/70 px-3 py-1.5 rounded-lg backdrop-blur-md">
-                        <Text className="text-white text-xs font-bold font-sans">
+                    <View className="absolute bottom-6 right-6 bg-black/60 px-4 py-1.5 rounded-xl border border-white/10">
+                        <Text className="text-white text-[10px] font-black uppercase tracking-widest">
                             {activeSlide + 1} / {item.gallery ? item.gallery.length : 1}
                         </Text>
                     </View>
                 </View>
 
                 {/* --- B. MAIN CONTENT --- */}
-                <View className="px-5 pt-6">
+                <View className="px-6 mt-6">
 
                     {/* Header Info */}
-                    <Text className="text-2xl font-bold text-slate-900 leading-8 mb-2 font-sans">
+                    <Text className="text-3xl font-black text-white leading-tight mb-3">
                         {item.name}
                     </Text>
-                    <View className="flex-row items-center gap-1 mb-6">
-                        <Ionicons name="star" size={14} color="#1A1A1A" />
-                        <Text className="text-sm font-bold text-slate-900 font-sans">{item.rating} · </Text>
-                        <Text className="text-sm font-bold underline text-slate-900 font-sans">{item.reviewCount} reviews</Text>
-                        <Text className="text-sm text-slate-500 font-sans"> · Colombo, Sri Lanka</Text>
+
+                    <View className="flex-row items-center gap-2 mb-6">
+                        <Ionicons name="star" size={16} color="#B4F05F" />
+                        <Text className="text-sm font-black text-white">{item.rating}</Text>
+                        <View className="w-1 h-1 rounded-full bg-[#333333] mx-1" />
+                        <Text className="text-sm font-bold text-[#B4F05F] underline">{item.reviewCount} Reviews</Text>
+                        <Text className="text-sm text-[#666666] font-bold"> · Colombo, SL</Text>
                     </View>
 
-                    {/*  1. Stock Display Logic  */}
+                    {/* Stock Display Logic */}
                     {!isOutOfStock && (
-                        <View className={`self-start px-3 py-1.5 rounded-lg mb-6 flex-row items-center gap-1.5 ${
-                            quantity < 3 ? 'bg-red-50 border border-red-100' : 'bg-green-50 border border-green-100'
-                        }`}>
+                        <View
+                            style={{
+                                backgroundColor: quantity < 3 ? '#EF444415' : '#B4F05F10',
+                                borderColor: quantity < 3 ? '#EF444430' : '#B4F05F30'
+                            }}
+                            className="self-start px-4 py-2 rounded-xl mb-8 border flex-row items-center gap-2"
+                        >
                             <Ionicons
                                 name={quantity < 3 ? "flame" : "checkmark-circle"}
                                 size={16}
-                                color={quantity < 3 ? "#DC2626" : "#16A34A"}
+                                color={quantity < 3 ? "#EF4444" : "#B4F05F"}
                             />
-                            <Text className={`text-xs font-bold font-sans ${
-                                quantity < 3 ? 'text-red-700' : 'text-green-700'
-                            }`}>
-                                {quantity < 3
-                                    ? `Hurry! Only ${quantity} left in stock`
-                                    : `In Stock (${quantity} available)`}
+                            <Text style={{ color: quantity < 3 ? '#EF4444' : '#B4F05F' }} className="text-[11px] font-black uppercase tracking-wider">
+                                {quantity < 3 ? `Limited Stock: ${quantity} left` : `Available: ${quantity} in stock`}
                             </Text>
                         </View>
                     )}
 
-                    <View className="h-[1px] bg-gray-100 w-full mb-6" />
-
-                    {/* Host Info */}
-                    <View className="flex-row items-center justify-between mb-6">
+                    {/* Host Info (Premium Card) */}
+                    <View className="flex-row items-center justify-between mb-8 p-5 bg-[#1A1A1A] rounded-[24px] border border-white/5">
                         <View>
-                            <Text className="text-base font-bold text-slate-900 font-sans">Hosted by GearUp</Text>
-                            <Text className="text-slate-500 text-sm font-sans">Verified Owner · 3 years hosting</Text>
+                            <Text className="text-sm font-black text-[#666666] uppercase mb-1">Managed By</Text>
+                            <Text className="text-lg font-bold text-white">CamMart Pro Logistics</Text>
                         </View>
                         <Image
                             source={{ uri: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100" }}
-                            className="w-14 h-14 rounded-full border border-gray-200"
+                            className="w-14 h-14 rounded-full border-2 border-[#B4F05F]"
                         />
                     </View>
 
-                    <View className="h-[1px] bg-gray-100 w-full mb-6" />
-
                     {/* Description */}
-                    <View className="mb-6">
-                        <Text className="text-[15px] leading-6 text-slate-700 font-sans">
+                    <View className="mb-8">
+                        <Text className="text-base leading-7 text-[#999999] font-medium">
                             {item.description}
                         </Text>
-                        <TouchableOpacity className="mt-2 flex-row items-center">
-                            <Text className="font-bold underline text-slate-900 font-sans mr-1">Show more</Text>
-                            <Ionicons name="chevron-forward" size={14} color="black"/>
+                        <TouchableOpacity className="mt-4 flex-row items-center">
+                            <Text className="font-black text-[#B4F05F] uppercase text-xs tracking-widest mr-2">Full Specs</Text>
+                            <Ionicons name="chevron-forward" size={14} color="#B4F05F"/>
                         </TouchableOpacity>
                     </View>
 
-                    <View className="h-[1px] bg-gray-100 w-full mb-6" />
-
-                    {/* Specs / Features (from DB format) */}
-                    <View className="mb-6">
-                        <Text className="text-lg font-bold text-slate-900 font-sans mb-4">Features & Specs</Text>
-
-                        {/* Display Specs using the logic from service */}
+                    {/* Features & Specs */}
+                    <View style={{ backgroundColor: '#1A1A1A' }} className="mb-8 p-6 rounded-[32px] border border-white/5">
+                        <Text className="text-xl font-black text-white mb-6 uppercase tracking-widest">Key Features</Text>
                         {item.specs && item.specs.map((spec: any, index: number) => (
-                            <View key={index} className="flex-row items-start mb-4">
-                                <Ionicons name={spec.icon || "checkmark-circle-outline"} size={22} color="#475569" style={{ marginTop: 1 }} />
-                                <Text className="ml-3 text-slate-700 text-[15px] flex-1 font-sans capitalize">
+                            <View key={index} className="flex-row items-center mb-5">
+                                <View className="w-10 h-10 bg-black rounded-full items-center justify-center border border-[#B4F05F20]">
+                                    <Ionicons name={spec.icon || "checkmark-circle"} size={20} color="#B4F05F" />
+                                </View>
+                                <Text className="ml-4 text-white text-base font-bold capitalize">
                                     {spec.text}
                                 </Text>
                             </View>
                         ))}
-
-                        {/* Fallback for 'features' array if old format exists */}
-                        {(!item.specs || item.specs.length === 0) && item.features && item.features.map((feature: string, index: number) => (
-                            <View key={index} className="flex-row items-start mb-4">
-                                <Ionicons name="checkmark-circle-outline" size={22} color="#475569" style={{ marginTop: 1 }} />
-                                <Text className="ml-3 text-slate-700 text-[15px] flex-1 font-sans">{feature}</Text>
-                            </View>
-                        ))}
                     </View>
 
-                    <View className="h-[1px] bg-gray-100 w-full mb-6" />
-
-                    {/* --- C. NEW MODULAR COMPONENTS --- */}
-
-                    {/* Date Picker Trigger (UI Only) */}
-                    <View className={"mb-8 p-4 bg-gray-50 rounded-2xl border border-b-gray-100"}>
-                        <Text className="text-lg font-bold text-slate-900 font-sans mb-1">
-                            {startDate && endDate
-                                ? `${calculateNights(startDate, endDate)} nights in Colombo`
-                                : "Add dates for prices"}
+                    {/* Date Picker Summary Card */}
+                    <TouchableOpacity
+                        onPress={() => !isOutOfStock && setCalendarOpen(true)}
+                        style={{ backgroundColor: '#1A1A1A', borderColor: '#B4F05F40' }}
+                        className="mb-8 p-6 rounded-[24px] border border-dashed"
+                    >
+                        <Text className="text-lg font-black text-white mb-1">
+                            {startDate && endDate ? `${calculateNights(startDate, endDate)} Night Rental` : "Check Availability"}
                         </Text>
-
-                        <Text className="text-slate-500 font-sans text-sm mb-4">
-                            {startDate && endDate
-                                ? `${startDate} - ${endDate}`
-                                : "Check availability to see total price"}
+                        <Text className="text-[#666666] font-bold text-xs mb-4">
+                            {startDate && endDate ? `${startDate} to ${endDate}` : "Pick dates to view total price"}
                         </Text>
-
-                        <TouchableOpacity
-                            // when item is out of stock, disable date selection
-                            onPress={() => !isOutOfStock && setCalendarOpen(true)}
-                            className="w-full border-t border-gray-200 pt-3 flex-row justify-between items-center"
-                        >
-                            <Text className="font-bold text-slate-900 font-sans">
-                                {startDate && endDate ? "Change dates" : "Select dates"}
-                            </Text>
-                            <Ionicons name="calendar-outline" size={20} color="black"/>
-                        </TouchableOpacity>
-
-                    </View>
+                        <View className="h-[1px] bg-white/5 w-full mb-4" />
+                        <View className="flex-row justify-between items-center">
+                            <Text className="font-black text-[#B4F05F] uppercase text-[10px] tracking-[2px]">Select Dates</Text>
+                            <Ionicons name="calendar" size={18} color="#B4F05F"/>
+                        </View>
+                    </TouchableOpacity>
 
                     <ReviewsSection rating={item.rating} count={item.reviewCount} />
-
                     <LocationSection />
-
-                    {/* Bottom Padding for Footer */}
                     <View className="h-10"/>
-
                 </View>
             </ScrollView>
 
-            {/* --- CHANGE 3: Footer Logic */}
-            <View
-                className="absolute bottom-0 w-full bg-white border-t border-gray-100 px-5 pt-4 pb-8 flex-row items-center justify-between z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]"
-                style={{ paddingBottom: Platform.OS === 'ios' ? 30 : 20 }}
-            >
+            {/* --- C. STICKY FOOTER --- */}
+            <View style={styles.footer} className="absolute bottom-0 w-full bg-black border-t border-white/5 px-6 pt-5 flex-row items-center justify-between z-50">
                 <View>
                     {startDate && endDate ? (
                         <View>
-                            <Text className="text-lg font-bold text-slate-900 font-sans">
-                                Rs. {totalPrice.toLocaleString()}
+                            <Text className="text-2xl font-black text-[#B4F05F]">
+                                Rs.{totalPrice.toLocaleString()}
                             </Text>
-                            <Text className="text-slate-500 text-xs font-sans font-medium underline mt-0.5">
-                                Rs. {item.pricePerDay.toLocaleString()} x {nights} nights
-                            </Text>
+                            <Text className="text-[#666666] text-[10px] font-black uppercase tracking-widest mt-1">Total</Text>
                         </View>
                     ) : (
                         <View>
-                            <View className="flex-row items-end">
-                                <Text className="text-lg font-bold text-slate-900 font-sans">
-                                    Rs. {item.pricePerDay.toLocaleString()}
-                                </Text>
-                                <Text className="text-slate-500 text-sm mb-0.5 font-sans font-medium"> / night</Text>
+                            <View className="flex-row items-baseline">
+                                <Text className="text-2xl font-black text-white">Rs.{item.pricePerDay.toLocaleString()}</Text>
+                                <Text className="text-[#666666] text-xs font-bold ml-1">/day</Text>
                             </View>
-                            <TouchableOpacity onPress={() => !isOutOfStock && setCalendarOpen(true)}>
-                                <Text className="text-xs text-slate-500 underline font-bold font-sans mt-0.5">
-                                    Add dates
-                                </Text>
-                            </TouchableOpacity>
                         </View>
                     )}
                 </View>
 
-                {/* Reserve Button Logic Update */}
                 <TouchableOpacity
-                    className={`px-8 py-3.5 rounded-xl shadow-md active:opacity-90 ${
-                        isOutOfStock
-                            ? 'bg-gray-400'
-                            :startDate && endDate ? 'bg-[#FF385C]' : 'bg-slate-900'}`}
-                    activeOpacity={0.8}
+                    style={{ backgroundColor: isOutOfStock ? '#333333' : '#B4F05F' }}
+                    className="px-8 py-5 rounded-[20px] active:scale-95" // Increased padding and specific radius
                     disabled={isOutOfStock}
                     onPress={handleReserve}
                 >
-                    <Text className="text-white font-bold text-base font-sans">
-                        {isOutOfStock
-                            ? "Unavailable"
-                            : startDate && endDate ? "Reserve" : "Check availability"}
+                    <Text style={{ color: isOutOfStock ? '#666666' : '#000' }} className="font-black text-[15px] uppercase tracking-[1px]">
+                        {isOutOfStock ? "Sold Out" : startDate && endDate ? "Reserve" : "Pick Dates"}
                     </Text>
                 </TouchableOpacity>
             </View>
 
-            {/* --- CHANGE 4: Modal Data Handling */}
             <DateSelectModal
                 isVisible={isCalendarOpen}
                 onClose={() => setCalendarOpen(false)}
@@ -471,7 +353,34 @@ export default function ProductDetails() {
                     setEndDate(end);
                 }}
             />
-
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    topGradient: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 140,
+        zIndex: 15
+    },
+    bottomGradient: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 100,
+        zIndex: 5
+    },
+    footer: {
+        paddingBottom: Platform.OS === 'ios' ? 45 : 30, // Taller footer
+        height: Platform.OS === 'ios' ? 130 : 110,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -10 },
+        shadowOpacity: 0.5,
+        shadowRadius: 20,
+        elevation: 10
+    }
+});

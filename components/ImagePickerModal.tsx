@@ -1,15 +1,27 @@
-import {View, Text, Modal, Pressable, TouchableOpacity} from 'react-native'
-import React from 'react'
-import {Ionicons} from "@expo/vector-icons";
+import React from 'react';
+import {
+    View,
+    Text,
+    Modal,
+    Pressable,
+    TouchableOpacity,
+    StyleSheet,
+    ViewStyle
+} from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
 
 interface ImagePickerModalProps {
-    isVisible: boolean
-    onClose: () => void
-    onCameraPress: () => void
-    onGalleryPress: () => void
+    isVisible: boolean;
+    onClose: () => void;
+    onCameraPress: () => void;
+    onGalleryPress: () => void;
 }
 
-const ImagePickerModal = ({ isVisible, onClose, onCameraPress, onGalleryPress }:ImagePickerModalProps ) => {
+interface Styles {
+    overlay: ViewStyle;
+}
+
+const ImagePickerModal = ({ isVisible, onClose, onCameraPress, onGalleryPress }: ImagePickerModalProps) => {
     return (
         <Modal
             animationType="slide"
@@ -17,53 +29,83 @@ const ImagePickerModal = ({ isVisible, onClose, onCameraPress, onGalleryPress }:
             visible={isVisible}
             onRequestClose={onClose}
         >
-            <Pressable className={"flex-1 bg-black/50"} onPress={onClose}>
-                <Pressable className={"bg-white absolute bottom-0 w-full rounded-t-3xl p-6 pb-10 shadow-xl"} onPress={(e) => e.stopPropagation()}>
-                    {/* Handle Bar (Design Element) */}
-                    <View className="w-full items-center mb-4">
-                        <View className="w-12 h-1.5 bg-gray-300 rounded-full" />
+            {/* Using Pressable for the backdrop to close on outside tap */}
+            <Pressable style={styles.overlay} onPress={onClose}>
+
+                {/* Modal Container: Stopping propagation to prevent clicks inside from closing the modal */}
+                <Pressable
+                    style={{ backgroundColor: '#000000', borderColor: '#1A1A1A' }}
+                    className="absolute bottom-0 w-full rounded-t-[40px] p-8 pb-12 border-t shadow-2xl"
+                    onPress={(e) => e.stopPropagation()}
+                >
+                    {/* Handle Bar (Modern Design Element) */}
+                    <View className="w-full items-center mb-6">
+                        <View className="w-12 h-1.5 bg-[#333333] rounded-full" />
                     </View>
 
-                    <Text className="text-xl font-bold text-slate-900 mb-6 text-center font-sans">
+                    <Text className="text-2xl font-black text-white mb-8 text-center tracking-tight">
                         Upload Photo
                     </Text>
 
-                    <View className={"flex-row justify-around"}>
+                    <View className="flex-row justify-around">
                         {/* Camera Button */}
                         <TouchableOpacity
                             onPress={() => { onCameraPress(); onClose(); }}
-                            className="items-center gap-2"
+                            activeOpacity={0.8}
+                            className="items-center gap-3"
                         >
-                            <View className="w-16 h-16 bg-gray-100 rounded-2xl items-center justify-center border border-gray-200">
-                                <Ionicons name="camera" size={30} color="#FF385C" />
+                            <View
+                                style={{ backgroundColor: '#1A1A1A', borderColor: '#2A2A2A' }}
+                                className="w-20 h-20 rounded-[24px] items-center justify-center border shadow-lg"
+                            >
+                                <Ionicons name="camera" size={32} color="#B4F05F" />
                             </View>
-                            <Text className="font-medium text-slate-700 font-sans">Camera</Text>
+                            <Text className="font-black text-[#999999] uppercase text-[10px] tracking-[2px]">
+                                Camera
+                            </Text>
                         </TouchableOpacity>
 
                         {/* Gallery Button */}
                         <TouchableOpacity
                             onPress={() => { onGalleryPress(); onClose(); }}
-                            className="items-center gap-2"
+                            activeOpacity={0.8}
+                            className="items-center gap-3"
                         >
-                            <View className="w-16 h-16 bg-gray-100 rounded-2xl items-center justify-center border border-gray-200">
-                                <Ionicons name="images" size={30} color="#FF385C" />
+                            <View
+                                style={{ backgroundColor: '#1A1A1A', borderColor: '#2A2A2A' }}
+                                className="w-20 h-20 rounded-[24px] items-center justify-center border shadow-lg"
+                            >
+                                <Ionicons name="images" size={32} color="#B4F05F" />
                             </View>
-                            <Text className="font-medium text-slate-700 font-sans">Gallery</Text>
+                            <Text className="font-black text-[#999999] uppercase text-[10px] tracking-[2px]">
+                                Gallery
+                            </Text>
                         </TouchableOpacity>
-
                     </View>
+
                     {/* Cancel Button */}
                     <TouchableOpacity
                         onPress={onClose}
-                        className="mt-8 bg-gray-100 py-4 rounded-xl items-center"
+                        style={{ backgroundColor: '#1A1A1A' }}
+                        className="mt-10 py-5 rounded-2xl items-center border border-white/5"
                     >
-                        <Text className="font-bold text-slate-900 font-sans">Cancel</Text>
+                        <Text className="font-black text-white uppercase tracking-widest text-xs">
+                            Cancel
+                        </Text>
                     </TouchableOpacity>
 
                 </Pressable>
-
             </Pressable>
         </Modal>
-    )
-}
-export default ImagePickerModal
+    );
+};
+
+const styles = StyleSheet.create<Styles>({
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'flex-end', // Corrected from 'end'
+    }
+});
+
+export default ImagePickerModal;

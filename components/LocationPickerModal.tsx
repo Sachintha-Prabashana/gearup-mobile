@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     View, Text, Modal, TextInput, FlatList, TouchableOpacity,
-    ActivityIndicator, Dimensions, Keyboard, Alert
+    ActivityIndicator, Dimensions, Keyboard, Alert, StyleSheet
 } from 'react-native';
-import MapView, { Region } from 'react-native-maps';
+import MapView, { Region, UrlTile } from 'react-native-maps'; // Added UrlTile for dark maps
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 const ASPECT_RATIO = width / height;
-const LATITUDE_DELTA = 0.005; // Zoom Level
+const LATITUDE_DELTA = 0.005;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
 interface LocationPickerProps {
@@ -24,13 +26,11 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
     const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Map States
     const mapRef = useRef<MapView>(null);
     const [selectedLocation, setSelectedLocation] = useState<any>(null);
     const [region, setRegion] = useState<Region | undefined>(undefined);
     const [gpsLoading, setGpsLoading] = useState(false);
 
-    // --- 1. SEARCH LOGIC (OpenStreetMap - Free) ---
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
             if (query.length > 2) searchPlaces();
@@ -43,7 +43,7 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
         try {
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=lk`,
-                { headers: { 'User-Agent': 'GearUpApp/1.0' } }
+                { headers: { 'User-Agent': 'CamMartApp/1.0' } }
             );
             const data = await response.json();
             setResults(data);
@@ -55,30 +55,24 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
     };
 
     const getCurrentLocation = async () => {
-        setLoading(true);
+        setGpsLoading(true);
         try {
-            // Permission Request
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'Permission to access location was denied');
+                Alert.alert('Permission Denied', 'CamMart needs location access to find gear near you.');
                 setGpsLoading(false);
                 return;
             }
 
-            // Get Coordinates
             let location = await Location.getCurrentPositionAsync({});
             const { latitude, longitude } = location.coords;
 
-            // Reverse Geocoding (OSM)
-            // We use the reverse API endpoint to get address details from lat/lon
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
-                { headers: { 'User-Agent': 'GearUpApp/1.0' } }
+                { headers: { 'User-Agent': 'CamMartApp/1.0' } }
             );
             const data = await response.json();
 
-            // Use the handleSelectResult logic to process this data
-            // We construct an object similar to the search result format
             handleSelectResult({
                 lat: latitude,
                 lon: longitude,
@@ -87,29 +81,24 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
             });
 
         } catch (error) {
-            Alert.alert("Error", "Could not fetch current location. Please check your GPS settings.");
-            console.error(error);
+            Alert.alert("GPS Error", "Could not fetch current location.");
         } finally {
             setGpsLoading(false);
         }
     }
 
-    // --- 2. LIST ITEM SELECT ---
     const handleSelectResult = (item: any) => {
         Keyboard.dismiss();
         const lat = parseFloat(item.lat);
         const lng = parseFloat(item.lon);
+        const city = item.address?.city || item.address?.town || item.address?.village || item.address?.suburb || "Colombo";
 
-        const city = item.address?.city || item.address?.town || item.address?.village || item.address?.suburb || "Unknown City";
-
-        const locationData = {
-            address: item.display_name, // Full Address
-            city: city,                 // Short Name (e.g., Malabe)
+        setSelectedLocation({
+            address: item.display_name,
+            city: city,
             lat: lat,
             lng: lng
-        };
-
-        setSelectedLocation(locationData);
+        });
 
         setRegion({
             latitude: lat,
@@ -121,10 +110,8 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
         setStep('map');
     };
 
-    // --- 3. CONFIRMATION ---
     const handleConfirm = () => {
         if (selectedLocation && region) {
-
             onConfirm({
                 ...selectedLocation,
                 lat: region.latitude,
@@ -143,56 +130,54 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
 
     return (
         <Modal visible={isVisible} animationType="slide" presentationStyle="pageSheet">
-            <View className="flex-1 bg-white">
+            <View style={{ flex: 1, backgroundColor: '#000000' }}>
+                <StatusBar style="light" />
 
                 {/* --- HEADER --- */}
-                <View className="flex-row justify-between items-center px-5 pt-6 pb-4 bg-white z-10 border-b border-gray-100">
-                    <Text className="text-xl font-bold text-slate-900">
-                        {step === 'search' ? 'Find Location' : 'Confirm Pin'}
+                <View style={{ borderBottomWidth: 1, borderBottomColor: '#1A1A1A' }} className="flex-row justify-between items-center px-6 pt-8 pb-4 bg-black">
+                    <Text className="text-2xl font-black text-white tracking-tighter">
+                        {step === 'search' ? 'Location' : 'Confirm'}
                     </Text>
-                    <TouchableOpacity onPress={() => { onClose(); resetState(); }} className="bg-gray-100 p-2 rounded-full">
-                        <Ionicons name="close" size={24} color="black" />
+                    <TouchableOpacity onPress={() => { onClose(); resetState(); }} className="bg-[#1A1A1A] p-2 rounded-full border border-white/5">
+                        <Ionicons name="close" size={24} color="white" />
                     </TouchableOpacity>
                 </View>
 
                 {/* ================= STEP 1: SEARCH VIEW ================= */}
                 {step === 'search' && (
-                    <View className="flex-1 px-5 pt-4">
+                    <View className="flex-1 px-6 pt-6">
                         {/* Search Input */}
-                        <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 h-12 mb-4">
-                            <Ionicons name="search" size={20} color="#64748B" />
+                        <View style={{ backgroundColor: '#1A1A1A', borderColor: '#2A2A2A' }} className="flex-row items-center border rounded-2xl px-4 h-14 mb-6">
+                            <Ionicons name="search" size={20} color="#666666" />
                             <TextInput
-                                className="flex-1 ml-3 text-slate-900 text-base"
-                                placeholder="Search city (e.g. Nugegoda)"
+                                className="flex-1 ml-3 text-white text-base font-bold"
+                                placeholder="Search city or street..."
                                 value={query}
                                 onChangeText={setQuery}
                                 autoFocus={true}
-                                placeholderTextColor="#94A3B8"
+                                placeholderTextColor="#444444"
                             />
-                            {loading && <ActivityIndicator size="small" color="#0F172A" />}
+                            {loading && <ActivityIndicator size="small" color="#B4F05F" />}
                         </View>
 
-                        {/* --- NEW: USE CURRENT LOCATION BUTTON --- */}
+                        {/* USE CURRENT LOCATION BUTTON */}
                         <TouchableOpacity
                             onPress={getCurrentLocation}
                             disabled={gpsLoading}
-                            className="flex-row items-center py-3 mb-2 active:opacity-60"
+                            className="flex-row items-center py-4 px-2 mb-4 bg-[#B4F05F10] rounded-2xl border border-[#B4F05F20]"
                         >
-                            <View className="w-10 h-10 bg-blue-50 rounded-full items-center justify-center mr-3">
+                            <View className="w-10 h-10 bg-[#B4F05F] rounded-full items-center justify-center mr-4">
                                 {gpsLoading ? (
-                                    <ActivityIndicator size="small" color="#3B82F6" />
+                                    <ActivityIndicator size="small" color="black" />
                                 ) : (
-                                    <Ionicons name="navigate" size={20} color="#3B82F6" />
+                                    <Ionicons name="navigate" size={20} color="black" />
                                 )}
                             </View>
                             <View>
-                                <Text className="text-slate-900 font-bold text-sm">Use my current location</Text>
-                                <Text className="text-slate-400 text-xs">Using GPS</Text>
+                                <Text className="text-[#B4F05F] font-black uppercase text-xs tracking-widest">Current Location</Text>
+                                <Text className="text-[#666666] text-xs font-bold">Use GPS to find gear nearby</Text>
                             </View>
                         </TouchableOpacity>
-
-                        {/* Divider */}
-                        <View className="h-[1px] bg-slate-100 mb-2" />
 
                         {/* Results List */}
                         <FlatList
@@ -202,16 +187,16 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     onPress={() => handleSelectResult(item)}
-                                    className="flex-row items-center py-4 border-b border-slate-50 active:bg-slate-50"
+                                    className="flex-row items-center py-5 border-b border-white/5 active:bg-[#1A1A1A] rounded-xl px-2"
                                 >
-                                    <View className="bg-slate-100 p-2.5 rounded-full mr-3">
-                                        <Ionicons name="location" size={20} color="#475569" />
+                                    <View className="bg-[#1A1A1A] p-3 rounded-full mr-4 border border-white/5">
+                                        <Ionicons name="location-outline" size={20} color="#B4F05F" />
                                     </View>
                                     <View className="flex-1">
-                                        <Text className="font-bold text-slate-800 text-sm">
+                                        <Text className="font-bold text-white text-base">
                                             {item.name || item.display_name.split(',')[0]}
                                         </Text>
-                                        <Text className="text-slate-500 text-xs mt-0.5" numberOfLines={2}>
+                                        <Text className="text-[#666666] text-xs font-bold mt-1" numberOfLines={1}>
                                             {item.display_name}
                                         </Text>
                                     </View>
@@ -219,7 +204,7 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
                             )}
                             ListEmptyComponent={() => (
                                 !loading && query.length > 2 ? (
-                                    <Text className="text-center text-slate-400 mt-10">No results found</Text>
+                                    <Text className="text-center text-[#666666] mt-10 font-bold">No results for "{query}"</Text>
                                 ) : null
                             )}
                         />
@@ -234,42 +219,50 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
                             style={{ flex: 1 }}
                             initialRegion={region}
                             onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
-                        />
+                        >
+                            {/* Dark Map Tiles Overlay */}
+                            <UrlTile
+                                urlTemplate="https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png"
+                                maximumZ={19}
+                                flipY={false}
+                            />
+                        </MapView>
 
-                        {/* CENTER PIN (Static Overlay) */}
-                        <View className="absolute top-1/2 left-1/2 -mt-9 -ml-5 pointer-events-none items-center justify-center">
-                            <Ionicons name="location" size={40} color="#EF4444" />
-                            {/* Pin Shadow */}
-                            <View className="w-3 h-3 bg-black/20 rounded-full mt-[-5px]" />
+                        {/* CENTER PIN (CamMart Neon Pin) */}
+                        <View className="absolute top-1/2 left-1/2 -mt-10 -ml-5 pointer-events-none items-center justify-center">
+                            <View className="bg-[#B4F05F]/20 p-2 rounded-full border border-[#B4F05F]/30">
+                                <Ionicons name="location" size={40} color="#B4F05F" />
+                            </View>
+                            <View className="w-4 h-1.5 bg-black/40 rounded-full mt-[-2px]" />
                         </View>
 
                         {/* Back Button */}
                         <TouchableOpacity
                             onPress={() => setStep('search')}
-                            className="absolute top-4 left-4 bg-white p-3 rounded-full shadow-md z-10"
+                            className="absolute top-6 left-6 bg-[#1A1A1A] p-3 rounded-2xl border border-white/10 shadow-2xl"
                         >
-                            <Ionicons name="arrow-back" size={24} color="black" />
+                            <Ionicons name="arrow-back" size={24} color="white" />
                         </TouchableOpacity>
 
                         {/* Footer Card */}
-                        <View className="absolute bottom-0 w-full bg-white p-6 rounded-t-3xl shadow-2xl">
-                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                                Selected Location
+                        <View style={{ backgroundColor: '#000000E0' }} className="absolute bottom-0 w-full p-8 rounded-t-[40px] border-t border-white/10 shadow-2xl backdrop-blur-xl">
+                            <Text className="text-[10px] font-black text-[#B4F05F] uppercase tracking-[3px] mb-3">
+                                Pin Location
                             </Text>
-                            <Text className="text-slate-900 font-bold text-lg leading-tight mb-6" numberOfLines={2}>
+                            <Text className="text-white font-bold text-lg leading-tight mb-8" numberOfLines={2}>
                                 {selectedLocation?.address}
                             </Text>
 
                             <TouchableOpacity
                                 onPress={handleConfirm}
-                                className="bg-slate-900 py-4 rounded-xl items-center shadow-md active:scale-95 transition-all"
+                                style={{ backgroundColor: '#B4F05F' }}
+                                className="py-5 rounded-2xl items-center active:scale-95 shadow-lg shadow-[#B4F05F]/20"
                             >
-                                <Text className="text-white font-bold text-lg">Confirm Location</Text>
+                                <Text className="text-black font-black uppercase tracking-widest text-base">Confirm Location</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 )}
-
             </View>
         </Modal>
     );

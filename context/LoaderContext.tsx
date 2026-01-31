@@ -1,10 +1,10 @@
-import React, {createContext, ReactNode, useState} from 'react';
-import {ActivityIndicator, View} from "react-native";
+import React, { createContext, ReactNode, useState } from 'react';
+import { ActivityIndicator, View, StyleSheet } from "react-native";
 
 interface LoaderContextProps {
-    showLoader: () => void
-    hideLoader: () => void
-    isLoading: boolean
+    showLoader: () => void;
+    hideLoader: () => void;
+    isLoading: boolean;
 }
 
 export const LoaderContext = createContext<LoaderContextProps>({
@@ -24,12 +24,26 @@ export const LoaderProvider = ({ children }: { children: ReactNode }) => {
             {children}
 
             {isLoading && (
-                <View className={"absolute top-0 left-0 right-0 bottom-0 justify-center items-center bg-black/30"}>
-                    <View className={"bg-white p-6 rounded-2xl shadow-lg"}>
-                        <ActivityIndicator size={"large"} color={"#1e40af"}/>
+                <View
+                    style={styles.overlay}
+                    className="absolute top-0 left-0 right-0 bottom-0 justify-center items-center"
+                >
+                    {/* Glassmorphism style container */}
+                    <View
+                        style={{ backgroundColor: '#1A1A1A', borderColor: '#333333' }}
+                        className="p-8 rounded-[32px] border shadow-2xl items-center justify-center"
+                    >
+                        <ActivityIndicator size="large" color="#B4F05F" />
                     </View>
                 </View>
             )}
         </LoaderContext.Provider>
-    )
-}
+    );
+};
+
+const styles = StyleSheet.create({
+    overlay: {
+        backgroundColor: 'rgba(0, 0, 0, 0.7)', // Deep dimmed background
+        zIndex: 9999, // Ensure it sits on top of everything
+    }
+});

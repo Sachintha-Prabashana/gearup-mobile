@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import { StatusBar } from 'expo-status-bar';
 
 // Components
 import LocationPickerModal from "@/components/LocationPickerModal";
@@ -26,20 +27,16 @@ export default function PersonalInfo() {
     const [isLocationModalVisible, setLocationModalVisible] = useState(false);
 
     useEffect(() => {
-        let isMounted = true; // 1. stop memory leaks
+        let isMounted = true;
 
         const fetchInfo = async () => {
             if (user) {
                 try {
                     const data: any = await getUserProfile();
-
                     if (data && isMounted) {
                         setName(data.displayName || "");
                         setPhone(data.phoneNumber || "");
-
-
                         const coords = data.coordinates || {};
-
                         setLocation({
                             address: data.address || "",
                             city: data.city || "",
@@ -55,8 +52,7 @@ export default function PersonalInfo() {
         };
 
         fetchInfo();
-
-        return () => { isMounted = false; }; // Cleanup function
+        return () => { isMounted = false; };
     }, [user]);
 
     const handleSave = async () => {
@@ -70,10 +66,9 @@ export default function PersonalInfo() {
             await updateUserProfile({
                 displayName: name,
                 phoneNumber: phone,
-                // Location Data Group
                 address: location.address,
                 city: location.city,
-                coordinates: { lat: location.lat, lng: location.lng } //  Lat/Lon Save
+                coordinates: { lat: location.lat, lng: location.lng }
             });
 
             Toast.show({ type: 'success', text1: 'Profile Updated!' });
@@ -86,84 +81,108 @@ export default function PersonalInfo() {
         }
     };
 
-    if (loading) return <View className="flex-1 bg-white items-center justify-center"><ActivityIndicator color="#000"/></View>;
+    if (loading) return (
+        <View style={{ flex: 1, backgroundColor: '#000000' }} className="items-center justify-center">
+            <ActivityIndicator color="#B4F05F"/>
+        </View>
+    );
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
-            {/* Header */}
-            <View className="px-5 py-4 flex-row items-center gap-4 border-b border-slate-50">
-                <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-slate-50 rounded-full items-center justify-center">
-                    <Ionicons name="arrow-back" size={24} color="black" />
-                </TouchableOpacity>
-                <Text className="text-xl font-bold text-slate-900">Personal Info</Text>
-            </View>
+        <View style={{ flex: 1, backgroundColor: '#000000' }}>
+            <StatusBar style="light" />
+            <SafeAreaView className="flex-1" edges={['top']}>
 
-            <ScrollView className="p-6">
-
-                {/* Full Name */}
-                <View className="mb-6">
-                    <Text className="text-slate-500 mb-2 font-bold text-xs uppercase tracking-wider">Full Name</Text>
-                    <TextInput
-                        value={name}
-                        onChangeText={setName}
-                        className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-900 font-medium text-base"
-                        placeholder="e.g. Sachintha Prabashana"
-                    />
-                </View>
-
-                {/* Phone Number */}
-                <View className="mb-6">
-                    <Text className="text-slate-500 mb-2 font-bold text-xs uppercase tracking-wider">Phone Number</Text>
-                    <TextInput
-                        value={phone}
-                        onChangeText={setPhone}
-                        keyboardType="phone-pad"
-                        className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-900 font-medium text-base"
-                        placeholder="e.g. 077 123 4567"
-                    />
-                </View>
-
-                {/* LOCATION INPUT (Clickable) */}
-                <View className="mb-8">
-                    <Text className="text-slate-500 mb-2 font-bold text-xs uppercase tracking-wider">Address / Location</Text>
-
+                {/* Header */}
+                <View style={{ borderBottomColor: '#1A1A1A' }} className="px-5 py-5 flex-row items-center gap-4 border-b">
                     <TouchableOpacity
-                        onPress={() => setLocationModalVisible(true)} // Open Modal
-                        activeOpacity={0.7}
-                        className={`bg-slate-50 p-4 rounded-xl border flex-row justify-between items-center ${location.address ? 'border-slate-300' : 'border-slate-200'}`}
+                        onPress={() => router.back()}
+                        style={{ backgroundColor: '#1A1A1A' }}
+                        className="w-10 h-10 rounded-full items-center justify-center border border-white/5"
                     >
-                        <View className="flex-1 pr-3">
-
-                            <Text className={`text-base font-medium ${location.address ? 'text-slate-900' : 'text-slate-400'}`} numberOfLines={1}>
-                                {location.address || "Tap to set location"}
-                            </Text>
-
-                            {location.city ? (
-                                <Text className="text-xs text-slate-500 mt-1">
-                                    <Ionicons name="location" size={10} color="#64748B" /> {location.city}
-                                </Text>
-                            ) : null}
-                        </View>
-                        <Ionicons name="map-outline" size={24} color="#0F172A" />
+                        <Ionicons name="arrow-back" size={22} color="white" />
                     </TouchableOpacity>
+                    <Text className="text-xl font-black text-white tracking-tighter">Personal Details</Text>
                 </View>
 
-                {/* Save Button */}
-                <TouchableOpacity
-                    onPress={handleSave}
-                    disabled={saving}
-                    className="bg-slate-900 py-4 rounded-xl items-center shadow-md active:scale-95 transition-all"
-                >
-                    {saving ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <Text className="text-white font-bold text-lg">Save Changes</Text>
-                    )}
-                </TouchableOpacity>
+                <ScrollView className="px-6 pt-8" showsVerticalScrollIndicator={false}>
 
-            </ScrollView>
+                    {/* Full Name */}
+                    <View className="mb-8">
+                        <Text className="text-[#666666] mb-3 font-black text-[10px] uppercase tracking-[2px] ml-1">Full Name</Text>
+                        <TextInput
+                            value={name}
+                            onChangeText={setName}
+                            style={{ backgroundColor: '#1A1A1A', borderColor: '#2A2A2A' }}
+                            className="p-4 rounded-2xl border text-white font-bold text-base"
+                            placeholder="e.g. Sachintha Prabashana"
+                            placeholderTextColor="#444"
+                        />
+                    </View>
 
-            {/*  LOCATION MODAL COMPONENT */}
+                    {/* Phone Number */}
+                    <View className="mb-8">
+                        <Text className="text-[#666666] mb-3 font-black text-[10px] uppercase tracking-[2px] ml-1">Phone Number</Text>
+                        <TextInput
+                            value={phone}
+                            onChangeText={setPhone}
+                            keyboardType="phone-pad"
+                            style={{ backgroundColor: '#1A1A1A', borderColor: '#2A2A2A' }}
+                            className="p-4 rounded-2xl border text-white font-bold text-base"
+                            placeholder="e.g. 077 123 4567"
+                            placeholderTextColor="#444"
+                        />
+                    </View>
+
+                    {/* LOCATION INPUT */}
+                    <View className="mb-12">
+                        <Text className="text-[#666666] mb-3 font-black text-[10px] uppercase tracking-[2px] ml-1">Current Address</Text>
+                        <TouchableOpacity
+                            onPress={() => setLocationModalVisible(true)}
+                            activeOpacity={0.8}
+                            style={{ backgroundColor: '#1A1A1A', borderColor: location.address ? '#B4F05F40' : '#2A2A2A' }}
+                            className="p-5 rounded-2xl border flex-row justify-between items-center"
+                        >
+                            <View className="flex-1 pr-4">
+                                <Text className={`text-base font-bold ${location.address ? 'text-white' : 'text-[#444]'}`} numberOfLines={1}>
+                                    {location.address || "Tap to select on map"}
+                                </Text>
+                                {location.city ? (
+                                    <View className="flex-row items-center mt-2">
+                                        <Ionicons name="location" size={12} color="#B4F05F" />
+                                        <Text className="text-xs text-[#666666] font-bold ml-1 uppercase tracking-widest">{location.city}</Text>
+                                    </View>
+                                ) : null}
+                            </View>
+                            <Ionicons name="map-outline" size={24} color={location.address ? "#B4F05F" : "#666"} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Save Button */}
+                    <TouchableOpacity
+                        onPress={handleSave}
+                        disabled={saving}
+                        style={{
+                            backgroundColor: '#B4F05F',
+                            shadowColor: '#B4F05F',
+                            shadowOffset: { width: 0, height: 8 },
+                            shadowOpacity: 0.3,
+                            shadowRadius: 12,
+                            elevation: 8
+                        }}
+                        className="py-5 rounded-[24px] items-center active:scale-[0.98]"
+                    >
+                        {saving ? (
+                            <ActivityIndicator color="black" />
+                        ) : (
+                            <Text className="text-black font-black text-base uppercase tracking-widest">Update Profile</Text>
+                        )}
+                    </TouchableOpacity>
+
+                    <View className="h-20" />
+                </ScrollView>
+            </SafeAreaView>
+
+            {/* LOCATION MODAL */}
             <LocationPickerModal
                 isVisible={isLocationModalVisible}
                 onClose={() => setLocationModalVisible(false)}
@@ -176,6 +195,6 @@ export default function PersonalInfo() {
                     });
                 }}
             />
-        </SafeAreaView>
+        </View>
     );
 }

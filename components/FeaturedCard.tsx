@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, Image, TouchableOpacity, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -21,7 +21,7 @@ const FeaturedCard = ({ item, isLiked, onToggle }: FeaturedCardProps) => {
     return (
         <TouchableOpacity
             style={{ width: width - 40, marginRight: 20 }}
-            className={`w-full rounded-3xl bg-gray-200 ${isOutOfStock ? 'opacity-60' : ''}`}
+            className={`rounded-[32px] bg-[#1A1A1A] ${isOutOfStock ? 'opacity-50' : ''}`}
             activeOpacity={0.9}
             onPress={() => router.push({ pathname: "/product/[id]", params: { id: item.id } })}
         >
@@ -29,76 +29,78 @@ const FeaturedCard = ({ item, isLiked, onToggle }: FeaturedCardProps) => {
             <View className="relative">
                 <Image
                     source={{ uri: item.image }}
-                    className="w-full h-[220px] rounded-3xl bg-gray-100"
+                    className="w-full h-[240px] rounded-[32px]"
                     resizeMode="cover"
                 />
 
-                {/*  SOLD OUT Overlay */}
+                {/* SOLD OUT Overlay */}
                 {isOutOfStock && (
-                    <View className="absolute top-0 left-0 w-full h-full justify-center items-center bg-black/10 rounded-t-3xl">
-                        <View className="bg-red-500 px-5 py-2 rounded-full shadow-lg transform scale-110">
-                            <Text className="text-white font-bold uppercase tracking-widest text-sm">Sold Out</Text>
+                    <View className="absolute top-0 left-0 w-full h-full justify-center items-center bg-black/60 rounded-[32px]">
+                        <View className="bg-red-600 px-6 py-2 rounded-full shadow-2xl">
+                            <Text className="text-white font-black uppercase tracking-widest text-xs">Sold Out</Text>
                         </View>
                     </View>
                 )}
 
-                {/*  Left Side: Status Badge (Available / Low Stock) */}
-                <View className="absolute top-4 left-4 z-20">
-                    <View className="bg-white/95 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 shadow-sm backdrop-blur-md">
+                {/* Left Side: Status Badge */}
+                <View className="absolute top-5 left-5 z-20">
+                    <View className="bg-black/60 px-3 py-1.5 rounded-full flex-row items-center gap-2 border border-white/10">
                         <View className={`w-2 h-2 rounded-full ${
-                            isOutOfStock ? 'bg-red-500' : isLowStock ? 'bg-orange-500' : 'bg-green-500'
+                            isOutOfStock ? 'bg-red-500' : isLowStock ? 'bg-orange-500' : 'bg-[#B4F05F]'
                         }`} />
 
-                        <Text className={`text-[10px] font-bold uppercase tracking-wide ${
-                            isOutOfStock ? 'text-red-600' : isLowStock ? 'text-orange-600' : 'text-slate-900'
+                        <Text className={`text-[10px] font-bold uppercase tracking-wider ${
+                            isOutOfStock ? 'text-red-400' : isLowStock ? 'text-orange-400' : 'text-[#B4F05F]'
                         }`}>
-                            {isOutOfStock ? "Sold Out" : isLowStock ? `Only ${quantity} Left` : "Available Now"}
+                            {isOutOfStock ? "Out of Stock" : isLowStock ? `Only ${quantity} Left` : "Available"}
                         </Text>
                     </View>
                 </View>
 
-                {/*  Right Side: Heart Button (Glass Effect) */}
+                {/* Right Side: Heart Button */}
                 <TouchableOpacity
                     onPress={onToggle}
-                    className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/20 items-center justify-center backdrop-blur-md border border-white/20 active:scale-90 transition-all shadow-sm"
+                    className="absolute top-5 right-5 z-20 w-11 h-11 rounded-full bg-black/40 items-center justify-center border border-white/20 active:scale-90"
                 >
                     <Ionicons
                         name={isLiked ? "heart" : "heart-outline"}
-                        size={20}
-                        color={isLiked ? "#EF4444" : "white"}
+                        size={22}
+                        color={isLiked ? "#FF3B30" : "white"}
                     />
                 </TouchableOpacity>
-
-                {/* Bottom Gradient (Optional: Makes text readable if overlaying) */}
-                {/* <View className="absolute bottom-0 w-full h-10 bg-gradient-to-t from-black/10 to-transparent" /> */}
             </View>
 
             {/* Bottom Content Area */}
-            <View className="p-5 bg-white rounded-b-3xl border-x border-b border-gray-100 shadow-sm">
+            <View className="p-6">
                 {/* 1. Title & Price Row */}
-                <View className="flex-row justify-between items-start mb-2">
-                    <Text className="text-xl font-bold text-slate-900 flex-1 mr-2" numberOfLines={1}>
+                <View className="flex-row justify-between items-start mb-1">
+                    <Text className="text-2xl font-bold text-white flex-1 mr-2" numberOfLines={1}>
                         {item.name}
                     </Text>
-                    <Text className="text-xl font-bold text-slate-900">
-                        Rs. {item.pricePerDay.toLocaleString()}
+                    <Text className="text-2xl font-bold text-[#B4F05F]">
+                        Rs.{item.pricePerDay.toLocaleString()}
                     </Text>
                 </View>
 
-                {/* 2. Subtitle (Location/Brand) */}
-                <View className="flex-row items-center gap-1.5 mb-4">
-                    <Ionicons name="location-outline" size={16} color="#64748B" />
-                    <Text className="text-sm font-medium text-slate-500">
-                        {item.brand} • Colombo Store
+                {/* 2. Subtitle (Brand/Location) */}
+                <View className="flex-row items-center gap-1.5 mb-5">
+                    <Text className="text-sm font-semibold text-[#999999]">
+                        {item.brand}
+                    </Text>
+                    <View className="w-1 h-1 rounded-full bg-[#333333]" />
+                    <Ionicons name="location" size={14} color="#666666" />
+                    <Text className="text-sm font-medium text-[#666666]">
+                        Colombo Store
                     </Text>
                 </View>
 
+                {/* 3. Specs / Badges */}
                 {item.specs && item.specs.length > 0 && (
-                    <View className="flex-row items-center justify-between pt-4 border-t border-slate-100">
-                        {item.specs.map((spec: any, index: number) => (
-                            <View key={index} className="flex-row items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
-                                <Ionicons name={spec.icon as any} size={16} color="#475569" />
-                                <Text className="text-xs font-bold text-slate-700">{spec.text}</Text>
+                    <View className="flex-row items-center gap-3 pt-5 border-t border-white/5">
+                        {item.specs.slice(0, 3).map((spec: any, index: number) => (
+                            <View key={index} className="flex-row items-center gap-2 bg-[#262626] px-3 py-2 rounded-xl border border-white/5">
+                                <Ionicons name={spec.icon as any} size={14} color="#B4F05F" />
+                                <Text className="text-xs font-bold text-[#EAEAEA]">{spec.text}</Text>
                             </View>
                         ))}
                     </View>

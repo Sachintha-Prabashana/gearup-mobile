@@ -8,10 +8,10 @@ import {SafeAreaView} from "react-native-safe-area-context";
 
 // 1. Define the "Photographic" Palette
 const COLORS = {
-    primary: "#2563EB", // Focus Blue (Active)
-    inactive: "#94A3B8", // Neutral Grey (Inactive)
-    background: "#FFFFFF",
-    border: "#F1F5F9",
+    primary: "#B4F05F",    // Neon Lime Green (Active)
+    inactive: "#666666",   // Muted Grey (Inactive)
+    background: "#000000", // Pure Black
+    border: "#1A1A1A",     // Dark Charcoal for subtle separation
 }
 
 // 2. Define Tabs Data (Airbnb Structure)

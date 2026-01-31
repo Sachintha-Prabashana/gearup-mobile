@@ -9,23 +9,19 @@ import {
     RefreshControl,
     Alert,
     Platform,
-    UIManager,
-    LayoutAnimation
+    StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { format, differenceInDays, parseISO, isPast, isToday, isFuture } from 'date-fns';
 import Toast from 'react-native-toast-message';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Services
 import { getUserBookings, returnItem, Booking } from "@/service/bookingService";
 import { useAuth } from "@/hooks/useAuth";
-
-// Enable Layout Animation for Android
-// if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-//     UIManager.setLayoutAnimationEnabledExperimental(true);
-// }
 
 const Rentals = () => {
     const router = useRouter();
@@ -36,7 +32,6 @@ const Rentals = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
 
-    // --- DATA LOADING ---
     const loadData = async () => {
         if (!user) return;
         try {
@@ -61,8 +56,6 @@ const Rentals = () => {
         setRefreshing(false);
     }
 
-    // --- LOGIC HELPERS ---
-
     const getCalculatedStatus = (booking: Booking) => {
         const endDate = parseISO(booking.endDate);
         if (booking.status === 'active' && isPast(endDate) && !isToday(endDate)) {
@@ -71,16 +64,16 @@ const Rentals = () => {
         return booking.status;
     };
 
-    const getStatusConfig = (calculatedStatus: string) => {
-        switch (calculatedStatus) {
+    const getStatusConfig = (status: string) => {
+        switch (status) {
             case 'active':
-                return { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-100', icon: 'pulse', label: 'Active Now' };
+                return { bg: 'bg-[#B4F05F]/10', text: 'text-[#B4F05F]', icon: 'pulse', label: 'Active Now' };
             case 'overdue':
-                return { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-100', icon: 'alert-circle', label: 'Overdue !' };
+                return { bg: 'bg-red-500/10', text: 'text-red-500', icon: 'alert-circle', label: 'Overdue' };
             case 'completed':
-                return { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200', icon: 'checkmark-circle', label: 'Returned' };
+                return { bg: 'bg-white/10', text: 'text-[#999999]', icon: 'checkmark-circle', label: 'Returned' };
             default:
-                return { bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-100', icon: 'time', label: calculatedStatus };
+                return { bg: 'bg-white/5', text: 'text-[#666666]', icon: 'time', label: status };
         }
     };
 
@@ -91,18 +84,18 @@ const Rentals = () => {
 
         if (status === 'overdue') {
             const daysOver = differenceInDays(today, end);
-            return { text: `Overdue by ${daysOver} days`, color: 'text-red-600' };
+            return { text: `Overdue by ${daysOver} days`, color: 'text-red-500' };
         }
         if (status === 'active') {
             const daysLeft = differenceInDays(end, today);
-            if (daysLeft === 0) return { text: 'Return Today', color: 'text-orange-600' };
-            return { text: `${daysLeft} days left`, color: 'text-slate-600' };
+            if (daysLeft === 0) return { text: 'Return Today', color: 'text-orange-500' };
+            return { text: `${daysLeft} days left`, color: 'text-[#B4F05F]' };
         }
         if (isFuture(start)) {
             const daysToStart = differenceInDays(start, today);
-            return { text: `Starts in ${daysToStart} days`, color: 'text-blue-600' };
+            return { text: `Starts in ${daysToStart} days`, color: 'text-blue-400' };
         }
-        return { text: 'Rental Completed', color: 'text-gray-400' };
+        return { text: 'Rental Completed', color: 'text-[#666666]' };
     };
 
     const handleReturn = (item: Booking) => {
@@ -117,9 +110,9 @@ const Rentals = () => {
                     onPress: async () => {
                         try {
                             setLoading(true);
-                            await returnItem(item.id, item.itemId); // Service Call
+                            await returnItem(item.id, item.itemId);
                             Toast.show({ type: 'success', text1: 'Success', text2: 'Item returned successfully' });
-                            loadData(); // Reload List
+                            loadData();
                         } catch (error: any) {
                             Toast.show({ type: 'error', text1: 'Error', text2: error.message });
                             setLoading(false);
@@ -130,26 +123,15 @@ const Rentals = () => {
         );
     };
 
-    // --- FILTERING ---
-    const currentBookings = bookings.filter(b => {
-        const s = getCalculatedStatus(b);
-        return ['active', 'overdue'].includes(s);
-    });
+    const displayData = activeTab === 'current'
+        ? bookings.filter(b => ['active', 'overdue'].includes(getCalculatedStatus(b)))
+        : bookings.filter(b => ['completed', 'cancelled'].includes(getCalculatedStatus(b)));
 
-    const historyBookings = bookings.filter(b => {
-        const s = getCalculatedStatus(b);
-        return ['completed', 'cancelled'].includes(s);
-    });
-
-    const displayData = activeTab === 'current' ? currentBookings : historyBookings;
-
-    // --- RENDER COMPONENT (CARD) ---
     const renderItem = ({ item }: { item: Booking }) => {
         const status = getCalculatedStatus(item);
         const config = getStatusConfig(status);
         const dateMsg = getDateMessage(item, status);
 
-        // Progress Calculation
         let progress = 0;
         if (status === 'active' || status === 'overdue') {
             const total = differenceInDays(parseISO(item.endDate), parseISO(item.startDate)) || 1;
@@ -157,88 +139,75 @@ const Rentals = () => {
             progress = Math.min(Math.max((passed / total) * 100, 5), 100);
         }
 
-        //  FIX: Safe Image URL Logic
-        // 1. itemImage (New format) -> 2. image (Old format) -> 3. Placeholder
-        const imageUrl = item.itemImage || "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=200";
+        const imageUrl = item.itemImage || "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=200";
 
         return (
             <TouchableOpacity
                 activeOpacity={0.9}
-                className={`bg-white p-4 mb-4 rounded-[24px] border shadow-sm ${status === 'overdue' ? 'border-red-200' : 'border-gray-100'}`}
+                style={{ backgroundColor: '#1A1A1A', borderColor: status === 'overdue' ? '#EF444450' : '#2A2A2A' }}
+                className="p-5 mb-5 rounded-[28px] border"
                 onPress={() => router.push({ pathname: "/product/[id]", params: { id: item.itemId } })}
             >
-                {/* Header: Image & Title */}
-                <View className="flex-row gap-4 mb-3">
-                    {/*  Updated Image Component with Safe URL */}
-                    <Image
-                        source={{ uri: imageUrl }}
-                        className="w-16 h-16 rounded-2xl bg-gray-100"
-                        resizeMode="cover"
-                    />
+                <View className="flex-row gap-4 mb-4">
+                    <Image source={{ uri: imageUrl }} className="w-16 h-16 rounded-2xl bg-[#000]" resizeMode="cover" />
 
                     <View className="flex-1 justify-center">
                         <View className="flex-row justify-between items-start">
-                            <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">
+                            <Text className="text-[10px] text-[#666666] font-black uppercase tracking-widest mb-1">
                                 {item.bookingRef || '#ORD-REF'}
                             </Text>
-                            {/* Status Badge */}
-                            <View className={`${config.bg} px-2 py-0.5 rounded-full flex-row items-center gap-1`}>
-                                <Ionicons name={config.icon as any} size={10} color={config.text.includes('red') ? '#DC2626' : '#15803d'} />
-                                <Text className={`text-[9px] font-bold uppercase ${config.text}`}>{config.label}</Text>
+                            <View className={`${config.bg} px-2.5 py-1 rounded-full flex-row items-center gap-1.5`}>
+                                <Ionicons name={config.icon as any} size={10} color={config.text.includes('B4F05F') ? '#B4F05F' : '#EF4444'} />
+                                <Text className={`text-[9px] font-black uppercase ${config.text}`}>{config.label}</Text>
                             </View>
                         </View>
-                        <Text className="text-base font-bold text-slate-900 leading-tight" numberOfLines={1}>
+                        <Text className="text-base font-bold text-white leading-tight" numberOfLines={1}>
                             {item.itemName || "Unknown Item"}
                         </Text>
                     </View>
                 </View>
 
-                {/* Timeline Box */}
-                <View className={`p-3 rounded-2xl mb-3 border ${status === 'overdue' ? 'bg-red-50/50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
-                    <View className="flex-row justify-between items-center mb-2">
-                        <View className="flex-row items-center gap-1.5">
-                            <Ionicons name="time-outline" size={16} color="#64748B" />
-                            <Text className={`text-xs font-bold ${dateMsg.color}`}>{dateMsg.text}</Text>
+                <View style={{ backgroundColor: '#00000050', borderColor: '#333333' }} className="p-4 rounded-2xl mb-4 border">
+                    <View className="flex-row justify-between items-center mb-3">
+                        <View className="flex-row items-center gap-2">
+                            <Ionicons name="time-outline" size={16} color="#999999" />
+                            <Text className={`text-xs font-black ${dateMsg.color}`}>{dateMsg.text}</Text>
                         </View>
-                        <Text className="text-[11px] text-slate-500 font-medium">
+                        <Text className="text-[11px] text-[#666666] font-bold">
                             {format(parseISO(item.startDate), 'MMM dd')} - {format(parseISO(item.endDate), 'MMM dd')}
                         </Text>
                     </View>
 
-                    {/* Progress Bar (Only for active/overdue) */}
                     {(status === 'active' || status === 'overdue') && (
-                        <View className="h-1.5 bg-gray-200 rounded-full overflow-hidden w-full mt-1">
+                        <View className="h-1.5 bg-[#333333] rounded-full overflow-hidden w-full">
                             <View
                                 style={{ width: `${progress}%` }}
-                                className={`h-full rounded-full ${status === 'overdue' ? 'bg-red-500' : progress > 80 ? 'bg-orange-500' : 'bg-slate-900'}`}
+                                className={`h-full rounded-full ${status === 'overdue' ? 'bg-red-500' : 'bg-[#B4F05F]'}`}
                             />
                         </View>
                     )}
                 </View>
 
-                {/* Footer: Price & Action */}
-                <View className="flex-row justify-between items-center pt-1">
-                    <Text className="text-sm font-bold text-slate-900">
-                        Rs. {item.totalPrice?.toLocaleString() || "0"}
-                    </Text>
+                <View className="flex-row justify-between items-center">
+                    <View className="flex-row items-baseline">
+                        <Text className="text-lg font-black text-white">Rs.{item.totalPrice?.toLocaleString()}</Text>
+                        <Text className="text-[#666666] text-[10px] font-bold ml-1">total</Text>
+                    </View>
 
-                    {/* Button Logic */}
                     {(status === 'active' || status === 'overdue') ? (
                         <TouchableOpacity
                             onPress={() => handleReturn(item)}
-                            className={`${status === 'overdue' ? 'bg-red-600' : 'bg-slate-900'} px-5 py-2.5 rounded-xl shadow-sm active:scale-95 transition-all`}
+                            style={{ backgroundColor: status === 'overdue' ? '#EF4444' : '#B4F05F' }}
+                            className="px-6 py-3 rounded-xl active:scale-95"
                         >
-                            <Text className="text-white text-xs font-bold">
+                            <Text style={{ color: status === 'overdue' ? '#FFFFFF' : '#000000' }} className="text-xs font-black uppercase">
                                 {status === 'overdue' ? 'Return Now' : 'Return Item'}
                             </Text>
                         </TouchableOpacity>
                     ) : (
-                        <TouchableOpacity
-                            disabled={true}
-                            className="bg-gray-100 px-5 py-2.5 rounded-xl"
-                        >
-                            <Text className="text-gray-400 text-xs font-bold">Completed</Text>
-                        </TouchableOpacity>
+                        <View style={{ backgroundColor: '#333333' }} className="px-6 py-3 rounded-xl">
+                            <Text className="text-[#666666] text-xs font-black uppercase">Completed</Text>
+                        </View>
                     )}
                 </View>
             </TouchableOpacity>
@@ -246,74 +215,59 @@ const Rentals = () => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={['top']}>
+        <View style={{ flex: 1, backgroundColor: '#000000' }}>
+            <StatusBar style="light" />
+            <LinearGradient colors={['#121212', '#000000']} style={StyleSheet.absoluteFillObject} />
 
-            {/* Header */}
-            <View className="px-5 pt-4 pb-2">
-                <Text className="text-3xl font-extrabold text-slate-900 font-sans tracking-tight mb-4">
-                    My Rentals
-                </Text>
+            <SafeAreaView className="flex-1" edges={['top']}>
+                <View className="px-6 pt-5 pb-4">
+                    <Text className="text-4xl font-black text-white tracking-tighter mb-6">My Rentals</Text>
 
-                {/* Custom Tabs */}
-                <View className="flex-row bg-white p-1.5 rounded-2xl border border-gray-100 mb-2 shadow-sm">
-                    <TouchableOpacity
-                        onPress={() => {
-                            // LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                            setActiveTab('current');
-                        }}
-                        className={`flex-1 py-2.5 rounded-xl items-center ${activeTab === 'current' ? 'bg-slate-900 shadow-sm' : 'bg-transparent'}`}
-                    >
-                        <Text className={`text-xs font-bold ${activeTab === 'current' ? 'text-white' : 'text-slate-500'}`}>Active</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => {
-                            // LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                            setActiveTab('history');
-                        }}
-                        className={`flex-1 py-2.5 rounded-xl items-center ${activeTab === 'history' ? 'bg-slate-900 shadow-sm' : 'bg-transparent'}`}
-                    >
-                        <Text className={`text-xs font-bold ${activeTab === 'history' ? 'text-white' : 'text-slate-500'}`}>History</Text>
-                    </TouchableOpacity>
+                    <View style={{ backgroundColor: '#1A1A1A', borderColor: '#2A2A2A' }} className="flex-row p-1.5 rounded-2xl border">
+                        <TouchableOpacity
+                            onPress={() => setActiveTab('current')} // Removed LayoutAnimation to fix Navigation Error
+                            style={{ backgroundColor: activeTab === 'current' ? '#B4F05F' : 'transparent' }}
+                            className="flex-1 py-3 rounded-xl items-center"
+                        >
+                            <Text className={`text-xs font-black uppercase ${activeTab === 'current' ? 'text-black' : 'text-[#666666]'}`}>Active</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => setActiveTab('history')} // Removed LayoutAnimation to fix Navigation Error
+                            style={{ backgroundColor: activeTab === 'history' ? '#B4F05F' : 'transparent' }}
+                            className="flex-1 py-3 rounded-xl items-center"
+                        >
+                            <Text className={`text-xs font-black uppercase ${activeTab === 'history' ? 'text-black' : 'text-[#666666]'}`}>History</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
 
-            {/* Content List */}
-            {loading ? (
-                <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator size="large" color="#0F172A" />
-                </View>
-            ) : (
-                <FlatList
-                    data={displayData}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderItem}
-                    contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                    ListEmptyComponent={() => (
-                        <View className="items-center justify-center mt-20 px-10">
-                            <View className="w-20 h-20 bg-gray-100 rounded-full items-center justify-center mb-4">
-                                <Ionicons name={activeTab === 'current' ? "calendar-outline" : "time-outline"} size={32} color="#94A3B8" />
+                {loading ? (
+                    <View className="flex-1 items-center justify-center">
+                        <ActivityIndicator size="large" color="#B4F05F" />
+                    </View>
+                ) : (
+                    <FlatList
+                        data={displayData}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderItem}
+                        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#B4F05F" />}
+                        ListEmptyComponent={() => (
+                            <View className="items-center justify-center mt-20 px-10">
+                                <View style={{ backgroundColor: '#1A1A1A' }} className="w-20 h-20 rounded-full items-center justify-center mb-6">
+                                    <Ionicons name={activeTab === 'current' ? "calendar-outline" : "time-outline"} size={32} color="#333333" />
+                                </View>
+                                <Text className="text-xl font-bold text-white mb-2">No {activeTab} bookings</Text>
+                                <Text className="text-[#666666] text-center text-sm leading-6">
+                                    {activeTab === 'current' ? "You don't have any active rentals right now." : "You haven't rented anything yet."}
+                                </Text>
                             </View>
-                            <Text className="text-lg font-bold text-slate-900 mb-1">No {activeTab} bookings</Text>
-                            <Text className="text-slate-400 text-center text-sm mb-6">
-                                {activeTab === 'current'
-                                    ? "You don't have any active rentals right now."
-                                    : "You haven't rented anything yet."}
-                            </Text>
-                            {activeTab === 'current' && (
-                                <TouchableOpacity
-                                    onPress={() => router.push('/(dashboard)/home')}
-                                    className="bg-slate-900 px-6 py-3 rounded-xl"
-                                >
-                                    <Text className="text-white font-bold text-sm">Browse Gear</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    )}
-                />
-            )}
-        </SafeAreaView>
+                        )}
+                    />
+                )}
+            </SafeAreaView>
+        </View>
     );
 };
 

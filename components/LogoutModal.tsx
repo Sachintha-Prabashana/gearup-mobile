@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-// import { BlurView } from 'expo-blur';
 
 interface LogoutModalProps {
     isVisible: boolean;
@@ -18,52 +17,69 @@ const LogoutModal = ({ isVisible, onClose, onConfirm }: LogoutModalProps) => {
             onRequestClose={onClose}
         >
             {/* Background Overlay */}
-            <View className="flex-1 bg-black/60 justify-center items-center px-6">
+            <View style={styles.overlay} className="flex-1 justify-center items-center px-8">
 
                 {/* Modal Container */}
-                <View className="bg-white w-full rounded-3xl p-6 items-center shadow-xl">
+                <View
+                    style={{ backgroundColor: '#1A1A1A', borderColor: '#2A2A2A' }}
+                    className="w-full rounded-[32px] p-8 items-center border shadow-2xl"
+                >
 
-                    {/* Warning Icon */}
-                    <View className="w-16 h-16 bg-red-50 rounded-full items-center justify-center mb-4">
-                        <Ionicons name="log-out" size={32} color="#EF4444" style={{ marginLeft: 4 }} />
+                    {/* Warning Icon Circle */}
+                    <View style={{ backgroundColor: '#EF444415' }} className="w-20 h-20 rounded-full items-center justify-center mb-6">
+                        <Ionicons name="log-out-outline" size={36} color="#EF4444" />
                     </View>
 
                     {/* Text Content */}
-                    <Text className="text-xl font-bold text-slate-900 font-sans mb-2">
-                        Log Out
+                    <Text className="text-2xl font-black text-white mb-3 text-center tracking-tight">
+                        Sign Out
                     </Text>
-                    <Text className="text-slate-500 text-center font-sans mb-8 leading-5">
-                        Are you sure you want to log out? {"\n"}
-                        You will need to sign in again to access your rentals.
+                    <Text className="text-[#999999] text-center font-bold mb-10 leading-6">
+                        Are you sure you want to log out? You'll need to sign back in to manage your gear.
                     </Text>
 
-                    {/* Buttons Row */}
-                    <View className="flex-row gap-3 w-full">
+                    {/* Action Buttons */}
+                    <View className="flex-row gap-4 w-full">
 
                         {/* Cancel Button */}
                         <TouchableOpacity
                             onPress={onClose}
-                            className="flex-1 py-3.5 bg-gray-100 rounded-xl items-center"
+                            style={{ backgroundColor: '#262626', height: 60 }} // Fixed height for consistency
+                            className="flex-1 rounded-2xl items-center justify-center"
                             activeOpacity={0.8}
                         >
-                            <Text className="text-slate-700 font-bold font-sans">Cancel</Text>
+                            <Text className="text-[#999999] font-black uppercase tracking-widest text-[11px]">Cancel</Text>
                         </TouchableOpacity>
 
                         {/* Confirm Button */}
                         <TouchableOpacity
                             onPress={onConfirm}
-                            className="flex-1 py-3.5 bg-[#FF385C] rounded-xl items-center shadow-sm"
-                            activeOpacity={0.8}
+                            style={{
+                                backgroundColor: '#B4F05F',
+                                height: 60, // Fixed height for consistency
+                                shadowColor: '#B4F05F',
+                                shadowOffset: { width: 0, height: 8 },
+                                shadowOpacity: 0.3,
+                                shadowRadius: 12,
+                                elevation: 8
+                            }}
+                            className="flex-1 rounded-2xl items-center justify-center"
+                            activeOpacity={0.9}
                         >
-                            <Text className="text-white font-bold font-sans">Yes, Log Out</Text>
+                            <Text className="text-black font-black uppercase tracking-widest text-[11px]">Logout</Text>
                         </TouchableOpacity>
 
                     </View>
-
                 </View>
             </View>
         </Modal>
     );
 };
+
+const styles = StyleSheet.create({
+    overlay: {
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    }
+});
 
 export default LogoutModal;
