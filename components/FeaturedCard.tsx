@@ -1,9 +1,12 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 
 const { width } = Dimensions.get('window');
+
+const CARD_WIDTH = width * 0.75;
 
 interface FeaturedCardProps {
     item: any;
@@ -20,8 +23,8 @@ const FeaturedCard = ({ item, isLiked, onToggle }: FeaturedCardProps) => {
 
     return (
         <TouchableOpacity
-            style={{ width: width - 40, marginRight: 20 }}
-            className={`rounded-[32px] bg-[#1A1A1A] ${isOutOfStock ? 'opacity-50' : ''}`}
+            style={{ width: CARD_WIDTH, marginRight: 16 }}
+            className={`rounded-[32px] p-2.5 bg-[#1A1A1A] ${isOutOfStock ? 'opacity-50' : ''}`}
             activeOpacity={0.9}
             onPress={() => router.push({ pathname: "/product/[id]", params: { id: item.id } })}
         >
@@ -29,8 +32,12 @@ const FeaturedCard = ({ item, isLiked, onToggle }: FeaturedCardProps) => {
             <View className="relative">
                 <Image
                     source={{ uri: item.image }}
-                    className="w-full h-[240px] rounded-[32px]"
-                    resizeMode="cover"
+                    className="h-[240px]  "
+                    style={{ width: '100%', height: 240, borderRadius: 24 }}
+                    contentFit="cover"
+                    transition={1000}
+                    placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4" // A simple blurred placeholder
+                    cachePolicy="memory-disk"
                 />
 
                 {/* SOLD OUT Overlay */}
@@ -97,12 +104,21 @@ const FeaturedCard = ({ item, isLiked, onToggle }: FeaturedCardProps) => {
                 {/* 3. Specs / Badges */}
                 {item.specs && item.specs.length > 0 && (
                     <View className="flex-row items-center gap-3 pt-5 border-t border-white/5">
-                        {item.specs.slice(0, 3).map((spec: any, index: number) => (
+                        {item.specs.slice(0, 2).map((spec: any, index: number) => (
                             <View key={index} className="flex-row items-center gap-2 bg-[#262626] px-3 py-2 rounded-xl border border-white/5">
                                 <Ionicons name={spec.icon as any} size={14} color="#B4F05F" />
-                                <Text className="text-xs font-bold text-[#EAEAEA]">{spec.text}</Text>
+                                <Text className="text-[10px] font-bold text-[#EAEAEA] uppercase tracking-wide">
+                                    {spec.text}
+                                </Text>
                             </View>
                         ))}
+
+                         {/*Additional Specs Indicator*/}
+                        {item.specs.length > 2 && (
+                            <Text className="text-[10px] text-[#666666] font-bold ml-1">
+                                +{item.specs.length - 2} more
+                            </Text>
+                        )}
                     </View>
                 )}
             </View>

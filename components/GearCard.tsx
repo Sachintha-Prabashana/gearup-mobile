@@ -1,7 +1,14 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+
+const { width } = Dimensions.get('window');
+
+//  Industry Standard:
+const CARD_WIDTH = width * 0.60;
+const CARD_HEIGHT = 260;
 
 interface GearCardProps {
     item: any;
@@ -18,79 +25,90 @@ const GearCard = ({ item, isLiked, onToggle }: GearCardProps) => {
 
     return (
         <TouchableOpacity
-            className="mr-5 w-[220px]"
-            activeOpacity={0.9}
+            style={{ width: CARD_WIDTH, marginRight: 16 }}
+            activeOpacity={0.8}
+            // className={"bg-[#1A1A1A] rounded-[24px] p-3 border border-white/5"}
             onPress={() => router.push({ pathname: "/product/[id]", params: { id: item.id } })}
         >
-            <View className="relative">
+            {/* --- Image Container --- */}
+            <View className="relative w-full mb-3">
                 <Image
                     source={{ uri: item.image }}
-                    className={`w-full h-[280px] rounded-[24px] bg-[#1A1A1A] ${isOutOfStock ? 'opacity-40' : ''}`}
-                    resizeMode="cover"
+                    className="bg-[#1A1A1A]"
+                    style={{ width: '100%', height: CARD_HEIGHT, borderRadius: 24 }}
+                    contentFit="cover"
+                    transition={800}
+                    placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
+                    cachePolicy="memory-disk"
                 />
 
-                {/* Sold Out Badge */}
-                {isOutOfStock && (
-                    <View className="absolute top-0 left-0 w-full h-full justify-center items-center bg-black/50 rounded-[24px]">
-                        <View className="bg-red-600 px-4 py-1.5 rounded-full shadow-2xl">
-                            <Text className="text-white text-[10px] font-black uppercase tracking-widest">Out of Stock</Text>
-                        </View>
-                    </View>
-                )}
+                {/* Overlays Wrapper (Gradient or dimming optional here) */}
 
-                {/* Rating Badge (CamMart Style) */}
-                <View className="absolute top-3 right-3 flex-row items-center gap-1 bg-black/60 px-2.5 py-1.5 rounded-xl border border-white/10">
-                    <Ionicons name="star" size={10} color="#FFC107" />
-                    <Text className="text-[11px] font-bold text-white">{item.rating}</Text>
+                {/* 1. Status Badges (Top Left) */}
+                <View className="absolute top-3 left-3 flex-col gap-1.5 items-start">
+                    {/* Rating Badge */}
+                    <View className="flex-row items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/5">
+                        <Ionicons name="star" size={10} color="#FFC107" />
+                        <Text className="text-[10px] font-bold text-white">{item.rating || "5.0"}</Text>
+                    </View>
+
+                    {/* Low Stock Warning */}
+                    {!isOutOfStock && isLowStock && (
+                        <View className="bg-orange-500/90 px-2 py-1 rounded-lg">
+                            <Text className="text-[9px] font-bold text-white uppercase">Only {quantity} Left</Text>
+                        </View>
+                    )}
                 </View>
 
-                {/* Favorite Button */}
+                {/* 2. Heart Button (Top Right - Standard UX) */}
                 <TouchableOpacity
                     onPress={onToggle}
-                    className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/40 items-center justify-center border border-white/10 active:scale-90"
+                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md items-center justify-center border border-white/10 active:scale-95"
                 >
                     <Ionicons
                         name={isLiked ? "heart" : "heart-outline"}
-                        size={18}
+                        size={16}
                         color={isLiked ? "#FF3B30" : "white"}
                     />
                 </TouchableOpacity>
 
-                {/* Glassmorphism Price Tag (Optional visual touch) */}
-                <View className="absolute bottom-3 right-3 bg-black/60 px-3 py-1.5 rounded-xl border border-white/5">
-                    <Text className="text-[#B4F05F] font-black text-xs">NEW</Text>
-                </View>
+                {/* 3. Sold Out Overlay */}
+                {isOutOfStock && (
+                    <View className="absolute inset-0 bg-black/60 rounded-[24px] items-center justify-center z-10">
+                        <View className="bg-red-600 px-3 py-1.5 rounded-full">
+                            <Text className="text-white text-[10px] font-black uppercase tracking-widest">Sold Out</Text>
+                        </View>
+                    </View>
+                )}
             </View>
 
-            <View className="mt-4 px-1">
-                {/* Brand & Item Name */}
-                <View className="mb-2">
-                    <Text className="text-[10px] font-black text-[#666666] uppercase tracking-widest mb-1">
-                        {item.brand}
-                    </Text>
-                    <Text className="text-[17px] font-bold text-white leading-tight" numberOfLines={1}>
-                        {item.name}
-                    </Text>
-                </View>
+            {/* --- Product Info Section --- */}
+            <View className="px-1">
+                {/* Brand Name */}
+                <Text className="text-[10px] font-bold text-[#666666] uppercase tracking-wider mb-0.5">
+                    {item.brand}
+                </Text>
 
-                {/* Status / Stock Warning */}
-                {!isOutOfStock && isLowStock && (
-                    <Text className="text-[11px] text-orange-500 font-bold mb-2">
-                        Only {item.quantity} units left!
-                    </Text>
-                )}
+                {/* Product Name (Lines restricted to 1 or 2) */}
+                <Text
+                    className="text-[15px] font-bold text-white leading-tight mb-2"
+                    numberOfLines={1}
+                >
+                    {item.name}
+                </Text>
 
-                <View className="flex-row items-center justify-between mt-1">
-                    <View className="flex-row items-baseline">
-                        <Text className="text-[16px] font-black text-[#B4F05F]">
+                {/* Price & Pro Badge Row */}
+                <View className="flex-row items-center justify-between">
+                    <View>
+                        <Text className="text-[#B4F05F] font-bold text-[15px]">
                             Rs.{item.pricePerDay.toLocaleString()}
+                            <Text className="text-[#666666] text-[10px] font-medium"> /day</Text>
                         </Text>
-                        <Text className="text-[#999999] text-xs font-bold ml-1">/day</Text>
                     </View>
 
                     {item.verificationRequired && (
-                        <View className="bg-[#B4F05F]/10 px-2 py-1 rounded-md border border-[#B4F05F]/20">
-                            <Text className="text-[9px] font-black text-[#B4F05F]">PRO</Text>
+                        <View className="border border-[#B4F05F]/30 rounded px-1.5 py-0.5">
+                            <Text className="text-[9px] font-bold text-[#B4F05F]">PRO</Text>
                         </View>
                     )}
                 </View>
