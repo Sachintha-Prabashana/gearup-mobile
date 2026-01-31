@@ -50,7 +50,7 @@ export default function RootLayout() {
 
                         <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
 
-                        // Customizing the Search Screen Modal Presentation
+                        {/*Customizing the Search Screen Modal Presentation*/}
                         <Stack.Screen
                             name="search"
                             options={{

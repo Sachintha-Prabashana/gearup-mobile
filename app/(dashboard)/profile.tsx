@@ -155,7 +155,11 @@ export default function Profile() {
                         <TouchableOpacity onPress={handleProfilePicUpdate} activeOpacity={0.9} className="relative mb-5">
                             <View className="p-1 bg-[#B4F05F]/20 rounded-full">
                                 <Image
-                                    source={{ uri: userData?.photoURL || "https://i.pravatar.cc/300" }}
+                                    source={{
+                                        uri: user?.photoURL
+                                            ? user.photoURL
+                                            : `https://ui-avatars.com/api/?name=${user?.displayName || "User"}&background=333333&color=B4F05F&bold=true`
+                                    }}
                                     className={`w-28 h-28 rounded-full bg-slate-900 ${isAvatarUploading ? 'opacity-50' : ''}`}
                                 />
                             </View>

@@ -29,6 +29,10 @@ import GearCard from "@/components/GearCard";
 import FeaturedCard from "@/components/FeaturedCard";
 import LocationPickerModal from "@/components/LocationPickerModal";
 import { useLoader } from "@/hooks/useLoader";
+import {usePushNotifications} from "@/hooks/usePushNotifications";
+import {doc} from "@firebase/firestore";
+import {db} from "@/service/firebase";
+import {updateDoc} from "firebase/firestore";
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -39,6 +43,9 @@ const Home = () => {
     const router = useRouter();
     const { user } = useAuth();
     const { showLoader, hideLoader } = useLoader();
+
+    //  NEW: Get Push Token
+    // const { expoPushToken } = usePushNotifications();
 
     // --- STATE ---
     const [activeCategoryId, setActiveCategoryId] = useState<number>(1);
@@ -88,6 +95,28 @@ const Home = () => {
         };
         loadBaseData();
     }, [user]);
+
+    useEffect(() => {
+        console.log("👤 Current User:", user);
+    }, [user]);
+
+    //  NEW: Save Push Token to Firestore
+    // useEffect(() => {
+    //     const saveTokenToBackend = async () => {
+    //         if (user?.uid && expoPushToken) {
+    //             try {
+    //                 const userRef = doc(db, "users", user.uid);
+    //                 await updateDoc(userRef, {
+    //                     pushToken: expoPushToken
+    //                 });
+    //                 console.log(" Token saved to Firestore for user:", user.uid);
+    //             } catch (error) {
+    //                 console.error(" Error saving token:", error);
+    //             }
+    //         }
+    //     };
+    //     saveTokenToBackend();
+    // }, [user, expoPushToken]);
 
     // --- 2. HANDLE LOCATION UPDATE ---
     const handleLocationUpdate = async (details: { address: string; city: string; lat: number; lng: number }) => {
@@ -207,7 +236,11 @@ const Home = () => {
                                 className="w-10 h-10 rounded-full overflow-hidden border bg-gray-900"
                             >
                                 <Image
-                                    source={{ uri: user?.photoURL || "https://i.pravatar.cc/300" }}
+                                    source={{
+                                        uri: user?.photoURL
+                                            ? user.photoURL
+                                            : `https://ui-avatars.com/api/?name=${user?.displayName || "User"}&background=333333&color=B4F05F&bold=true`
+                                    }}
                                     style={{ width: '100%', height: '100%' }}
                                     // className="w-full h-full"
                                     contentFit="cover"
