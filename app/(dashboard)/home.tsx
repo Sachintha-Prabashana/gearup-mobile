@@ -5,7 +5,6 @@ import {
     ScrollView,
     TouchableOpacity,
     FlatList,
-    Image,
     Platform,
     LayoutAnimation,
     UIManager,
@@ -18,14 +17,18 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 
 import { getCategories, getGearByCategory, getTrendingGear } from '@/service/gearService';
 import { toggleFavorite, getUserFavoriteIds } from "@/service/favoriteService";
+import { getUserProfile, updateUserProfile } from "@/service/userService";
 import { useAuth } from "@/hooks/useAuth";
 import PromoCarousel from "@/components/PromoCarousel";
 import SkeletonCard from "@/components/SkeletonCard";
 import GearCard from "@/components/GearCard";
 import FeaturedCard from "@/components/FeaturedCard";
+import LocationPickerModal from "@/components/LocationPickerModal";
+import { useLoader } from "@/hooks/useLoader";
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -35,6 +38,7 @@ const { width } = Dimensions.get('window');
 const Home = () => {
     const router = useRouter();
     const { user } = useAuth();
+    const { showLoader, hideLoader } = useLoader();
 
     // --- STATE ---
     const [activeCategoryId, setActiveCategoryId] = useState<number>(1);
@@ -45,6 +49,9 @@ const Home = () => {
     const [loadingInitial, setLoadingInitial] = useState(true);
     const [loadingCategory, setLoadingCategory] = useState(false);
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+
+    const [displayLocation, setDisplayLocation] = useState("Colombo, SL"); // Default Location
+    const [isLocationModalVisible, setLocationModalVisible] = useState(false);
 
     // --- DATA LOADING ---
     useEffect(() => {
@@ -61,6 +68,13 @@ const Home = () => {
                 if (user) {
                     const ids = await getUserFavoriteIds();
                     setFavoriteIds(new Set(ids));
+
+                    //  Load User Location
+                    const profile: any = await getUserProfile();
+                    if (profile) {
+                        const city = profile.city || profile.address?.split(',')[0] || "Colombo, SL";
+                        setDisplayLocation(city);
+                    }
                 }
 
                 if (sortedCats.length > 0) {
@@ -74,6 +88,36 @@ const Home = () => {
         };
         loadBaseData();
     }, [user]);
+
+    // --- 2. HANDLE LOCATION UPDATE ---
+    const handleLocationUpdate = async (details: { address: string; city: string; lat: number; lng: number }) => {
+        if (!user) {
+            Toast.show({ type: 'error', text1: 'Login Required', text2: 'Please login to set your location.' });
+            return;
+        }
+
+        try {
+            showLoader();
+
+            // Firebase Update
+            await updateUserProfile({
+                address: details.address,
+                city: details.city,
+                coordinates: { lat: details.lat, lng: details.lng }
+            });
+
+            // Local State Update
+            setDisplayLocation(details.city || details.address.split(',')[0]);
+
+            hideLoader();
+            Toast.show({ type: 'success', text1: 'Location Updated!', text2: `Set to ${details.city}` });
+
+        } catch (error) {
+            hideLoader();
+            console.error(error);
+            Toast.show({ type: 'error', text1: 'Update Failed', text2: 'Could not save location.' });
+        }
+    };
 
     const handleToggleFavorite = async (item: any) => {
         if(!user) {
@@ -138,9 +182,15 @@ const Home = () => {
                     <View className="flex-row items-center justify-between mb-5">
                         <View>
                             <Text className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Location</Text>
-                            <TouchableOpacity className="flex-row items-center gap-1">
+                            {/*  Updated: Clickable Location Header */}
+                            <TouchableOpacity
+                                onPress={() => setLocationModalVisible(true)}
+                                className="flex-row items-center gap-1 active:opacity-60"
+                            >
                                 <Ionicons name="location" size={16} color="#B4F05F" />
-                                <Text className="text-base font-bold text-white">Colombo, SL</Text>
+                                <Text className="text-base font-bold text-white max-w-[200px]" numberOfLines={1}>
+                                    {displayLocation}
+                                </Text>
                                 <Ionicons name="chevron-down" size={14} color="#666666" />
                             </TouchableOpacity>
                         </View>
@@ -158,8 +208,11 @@ const Home = () => {
                             >
                                 <Image
                                     source={{ uri: user?.photoURL || "https://i.pravatar.cc/300" }}
-                                    className="w-full h-full"
-                                    resizeMode="cover"
+                                    style={{ width: '100%', height: '100%' }}
+                                    // className="w-full h-full"
+                                    contentFit="cover"
+                                    transition={1000} // fade in 1 sec
+                                    cachePolicy="memory-disk" // cashing on
                                 />
                             </TouchableOpacity>
                         </View>
@@ -304,6 +357,12 @@ const Home = () => {
                         />
                     </View>
                 </ScrollView>
+
+                <LocationPickerModal
+                    isVisible={isLocationModalVisible}
+                    onClose={() => setLocationModalVisible(false)}
+                    onConfirm={handleLocationUpdate}
+                />
             </SafeAreaView>
         </View>
     );

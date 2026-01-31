@@ -43,7 +43,7 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
         try {
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=lk`,
-                { headers: { 'User-Agent': 'CamMartApp/1.0' } }
+                { headers: { 'User-Agent': 'GearUp/1.0' } }
             );
             const data = await response.json();
             setResults(data);
@@ -59,7 +59,7 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
         try {
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'CamMart needs location access to find gear near you.');
+                Alert.alert('Permission Denied', 'GearUp needs location access to find gear near you.');
                 setGpsLoading(false);
                 return;
             }
@@ -69,7 +69,7 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
 
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
-                { headers: { 'User-Agent': 'CamMartApp/1.0' } }
+                { headers: { 'User-Agent': 'GearUp/1.0' } }
             );
             const data = await response.json();
 
@@ -204,7 +204,9 @@ export default function LocationPickerModal({ isVisible, onClose, onConfirm }: L
                             )}
                             ListEmptyComponent={() => (
                                 !loading && query.length > 2 ? (
-                                    <Text className="text-center text-[#666666] mt-10 font-bold">No results for "{query}"</Text>
+                                    <Text className="text-center text-[#666666] mt-10 font-bold">
+                                        {`No results for "${query}"`}
+                                    </Text>
                                 ) : null
                             )}
                         />
