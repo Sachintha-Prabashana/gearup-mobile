@@ -220,13 +220,16 @@ const Home = () => {
 
                     {/* Search Bar */}
                     <TouchableOpacity
+                        onPress={() => router.push("/search")}
                         style={{ backgroundColor: '#1A1A1A', borderColor: '#2A2A2A' }}
                         className="flex-row items-center rounded-2xl h-[56px] px-4 border"
-                        activeOpacity={0.9}
+                        activeOpacity={0.7}
                     >
                         <Ionicons name="search-outline" size={20} color="#999999" />
                         <View className="flex-1 ml-3">
-                            <Text className="text-[#666666] font-medium text-[14px]">Search equipment...</Text>
+                            <Text className="text-[#666666] font-medium text-[14px]">
+                                Search camera, lens, drone...
+                            </Text>
                         </View>
                         <View style={{ backgroundColor: '#B4F05F' }} className="w-9 h-9 rounded-xl items-center justify-center">
                             <Ionicons name="options" size={18} color="black" />

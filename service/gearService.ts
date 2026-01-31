@@ -1,5 +1,6 @@
 import { db } from "@/service/firebase"
 import {collection, getDocs, limit, where, query, getDoc, doc} from "@firebase/firestore";
+import {updateDoc} from "firebase/firestore";
 
 const formatSpecsForUI = (dbSpecs: any) => {
     if (!dbSpecs) return [];
@@ -96,3 +97,91 @@ export const getGearById = async (id: string) => {
         return null;
     }
 };
+
+const generateSearchKeywords = (name: string, brand: string) => {
+    const keywords: string[] = [];
+
+    const searchString = `${name} ${brand}`.toLowerCase();
+
+    const words = searchString.split(" ");
+
+    words.forEach((word) => {
+        let temp = "";
+        for (let i = 0; i < word.length; i++) {
+            temp += word[i];
+            keywords.push(temp);
+        }
+    });
+
+    return [...new Set(keywords)];
+};
+
+export const updateAllItemsWithKeywords = async () => {
+    try {
+        console.log("Starting Migration...");
+
+        const querySnapshot = await getDocs(collection(db, "products"));
+
+        let count = 0;
+
+        // 2. Loop and update
+        const updates = querySnapshot.docs.map(async (document) => {
+            const data = document.data();
+
+            // get name , brand, category and give keywords
+            const keywords = generateSearchKeywords(
+                data.name || "",
+                data.brand || ""
+            );
+
+            // 3.update the db
+            const docRef = doc(db, "products", document.id);
+            await updateDoc(docRef, {
+                searchKeywords: keywords
+            });
+
+            count++;
+            console.log(`Updated: ${data.name}`);
+        });
+
+        // Wait for all updates to complete
+        await Promise.all(updates);
+
+        console.log(`Success! Updated ${count} items.`);
+        alert("Migration Complete! All items now have keywords.");
+
+    } catch (error) {
+        console.error("Migration Failed:", error);
+        alert("Something went wrong!");
+    }
+};
+
+export const searchGearItems = async (searchText: string) => {
+
+    if (!searchText || searchText.length < 1) return [];
+
+    try {
+        const searchLower = searchText.toLowerCase();
+        const productsRef = collection(db, "products"); // ✅ Collection Name Check කරන්න
+
+        //  Industry Standard Query:
+        // Using 'array-contains' on precomputed 'searchKeywords' field
+
+        const q = query(
+            productsRef,
+            where("searchKeywords", "array-contains", searchLower),
+            limit(10) // Limit results for performance
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+    } catch (error) {
+        console.error("Search Error:", error);
+        return [];
+    }
+}

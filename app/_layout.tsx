@@ -46,7 +46,21 @@ export default function RootLayout() {
         >
             <LoaderProvider>
                 <AuthProvider>
-                    <Stack screenOptions={{ headerShown: false }} />
+                    <Stack screenOptions={{ headerShown: false }}>
+
+                        <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
+
+                        // Customizing the Search Screen Modal Presentation
+                        <Stack.Screen
+                            name="search"
+                            options={{
+                                headerShown: false,
+                                presentation: 'fullScreenModal',
+                                animation: 'fade',
+                                animationDuration: 200
+                            }}
+                        />
+                    </Stack>
                     <Toast />
                 </AuthProvider>
             </LoaderProvider>
