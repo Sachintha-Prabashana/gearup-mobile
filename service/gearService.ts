@@ -34,7 +34,7 @@ export const getTrendingGear = async () => {
     try {
         const q = query(
             collection(db, "products"),
-            where("rating", ">=", 4.8),
+            where("averageRating", ">=", 3.5),
             limit(5)
         );
         const querySnapshot = await getDocs(q);

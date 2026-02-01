@@ -6,9 +6,28 @@ interface LogoutModalProps {
     isVisible: boolean;
     onClose: () => void;
     onConfirm: () => void;
+    title: string;          // sign out or remove item
+    message: string;        //  "Are you sure..."
+    confirmText?: string;   // Button name = (default: "Confirm")
+    icon?: keyof typeof Ionicons.glyphMap; // Icon name from Ionicons
+    isDanger?: boolean;     // need to show danger style (red) or not
 }
 
-const LogoutModal = ({ isVisible, onClose, onConfirm }: LogoutModalProps) => {
+const ConfirmationModal = ({
+                               isVisible,
+                               onClose,
+                               onConfirm,
+                               title,
+                               message,
+                               confirmText = "Confirm",
+                               icon = "alert-circle-outline",
+                               isDanger = false
+}: LogoutModalProps) => {
+
+    const primaryColor = isDanger ? '#EF4444' : '#B4F05F';
+    const primaryTextColor = isDanger ? '#FFFFFF' : '#000000';
+    const iconBgColor = isDanger ? '#EF444415' : '#B4F05F15';
+
     return (
         <Modal
             animationType="fade"
@@ -25,39 +44,36 @@ const LogoutModal = ({ isVisible, onClose, onConfirm }: LogoutModalProps) => {
                     className="w-full rounded-[32px] p-8 items-center border shadow-2xl"
                 >
 
-                    {/* Warning Icon Circle */}
-                    <View style={{ backgroundColor: '#EF444415' }} className="w-20 h-20 rounded-full items-center justify-center mb-6">
-                        <Ionicons name="log-out-outline" size={36} color="#EF4444" />
+                    {/* Dynamic Icon */}
+                    <View style={{ backgroundColor: iconBgColor }} className="w-20 h-20 rounded-full items-center justify-center mb-6">
+                        <Ionicons name={icon} size={36} color={primaryColor} />
                     </View>
 
-                    {/* Text Content */}
+                    {/* Dynamic Text */}
                     <Text className="text-2xl font-black text-white mb-3 text-center tracking-tight">
-                        Sign Out
+                        {title}
                     </Text>
                     <Text className="text-[#999999] text-center font-bold mb-10 leading-6">
-                        Are you sure you want to log out? You'll need to sign back in to manage your gear.
+                        {message}
                     </Text>
 
-                    {/* Action Buttons */}
+                    {/* Buttons */}
                     <View className="flex-row gap-4 w-full">
-
-                        {/* Cancel Button */}
                         <TouchableOpacity
                             onPress={onClose}
-                            style={{ backgroundColor: '#262626', height: 60 }} // Fixed height for consistency
+                            style={{ backgroundColor: '#262626', height: 60 }}
                             className="flex-1 rounded-2xl items-center justify-center"
                             activeOpacity={0.8}
                         >
                             <Text className="text-[#999999] font-black uppercase tracking-widest text-[11px]">Cancel</Text>
                         </TouchableOpacity>
 
-                        {/* Confirm Button */}
                         <TouchableOpacity
                             onPress={onConfirm}
                             style={{
-                                backgroundColor: '#B4F05F',
-                                height: 60, // Fixed height for consistency
-                                shadowColor: '#B4F05F',
+                                backgroundColor: primaryColor,
+                                height: 60,
+                                shadowColor: primaryColor,
                                 shadowOffset: { width: 0, height: 8 },
                                 shadowOpacity: 0.3,
                                 shadowRadius: 12,
@@ -66,9 +82,10 @@ const LogoutModal = ({ isVisible, onClose, onConfirm }: LogoutModalProps) => {
                             className="flex-1 rounded-2xl items-center justify-center"
                             activeOpacity={0.9}
                         >
-                            <Text className="text-black font-black uppercase tracking-widest text-[11px]">Logout</Text>
+                            <Text style={{ color: primaryTextColor }} className="font-black uppercase tracking-widest text-[11px]">
+                                {confirmText}
+                            </Text>
                         </TouchableOpacity>
-
                     </View>
                 </View>
             </View>
@@ -82,4 +99,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default LogoutModal;
+export default ConfirmationModal;

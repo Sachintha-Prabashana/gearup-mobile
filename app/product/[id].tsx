@@ -307,7 +307,11 @@ export default function ProductDetails() {
                         </View>
                     </TouchableOpacity>
 
-                    <ReviewsSection rating={item.rating} count={item.reviewCount} />
+                    <ReviewsSection
+                        itemId={item.id}
+                        rating={item.rating || item.averageRating || 0}
+                        count={item.reviewCount || item.ratingCount || 0}
+                    />
                     <LocationSection />
                     <View className="h-10"/>
                 </View>

@@ -26,6 +26,9 @@ export interface Booking {
     bookingRef: string;
     isReturned: boolean;
     createdAt: any;
+
+    isRated?: boolean;
+    myRating?: number;
 }
 
 export const createBooking = async (data: BookingInput) => {

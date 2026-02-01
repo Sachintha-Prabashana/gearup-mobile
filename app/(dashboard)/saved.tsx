@@ -22,6 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 // Services & Hooks
 import { getSavedItems, toggleFavorite } from "@/service/favoriteService";
 import { useAuth } from "@/hooks/useAuth";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -34,6 +35,40 @@ export default function Saved() {
     const [savedItems, setSavedItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
+    const [isModalVisible, setModalVisible] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<any>(null);
+
+    const handleRemoveClick = (item: any) => {
+        setSelectedItem(item);
+        setModalVisible(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!selectedItem) return;
+
+        setModalVisible(false);
+
+        // Smooth Animation
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+        // Backup
+        const prevItems = [...savedItems];
+
+        // UI Update (Optimistic)
+        setSavedItems(prevItems.filter(i => i.id !== selectedItem.id));
+
+        try {
+            // API Call
+            await toggleFavorite(selectedItem);
+            Toast.show({ type: 'success', text1: 'Removed', text2: 'Item removed from wishlist' });
+        } catch (error) {
+            setSavedItems(prevItems);
+            Toast.show({ type: 'error', text1: 'Error', text2: 'Could not update favorites.' });
+        } finally {
+            setSelectedItem(null);
+        }
+    };
 
     const loadFavorites = async () => {
         if (!user) {
@@ -55,20 +90,6 @@ export default function Saved() {
             loadFavorites();
         }, [user])
     );
-
-    const handleRemove = async (item: any) => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        const prevItems = [...savedItems];
-        setSavedItems(prevItems.filter(i => i.id !== item.id));
-
-        try {
-            await toggleFavorite(item);
-            Toast.show({ type: 'success', text1: 'Removed', text2: 'Item removed from wishlist' });
-        } catch (error) {
-            setSavedItems(prevItems);
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Could not update favorites.' });
-        }
-    };
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -115,7 +136,7 @@ export default function Saved() {
                             </View>
 
                             <TouchableOpacity
-                                onPress={() => handleRemove(item)}
+                                onPress={() => handleRemoveClick(item)}
                                 className="bg-[#2A2A2A] p-2 rounded-full"
                             >
                                 <Ionicons name="trash-outline" size={16} color="#FF3B30" />
@@ -214,6 +235,17 @@ export default function Saved() {
                     />
                 )}
             </SafeAreaView>
+
+            <ConfirmationModal
+                isVisible={isModalVisible}
+                onClose={() => setModalVisible(false)}
+                onConfirm={confirmDelete}
+                title="Remove Item"
+                message="Are you sure you want to remove this from your wishlist?"
+                confirmText="Remove"
+                icon="trash-outline"
+                isDanger={true}
+            />
         </View>
     );
 }

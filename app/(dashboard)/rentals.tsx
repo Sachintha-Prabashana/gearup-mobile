@@ -19,6 +19,8 @@ import Toast from 'react-native-toast-message';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import AdminActionModal from "@/components/AdminActionModal";
+import { addReview } from "@/service/ratingService";
+import RatingModal from "@/components/RatingModal";
 
 // Services
 import { getUserBookings, Booking, markBookingAsCompleted } from "@/service/bookingService";
@@ -32,8 +34,15 @@ const Rentals = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+
+    // Modals & Selections
     const [isAdminModalVisible, setAdminModalVisible] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+
+    // Rating States
+    const [isRatingModalVisible, setRatingModalVisible] = useState(false);
+    const [isSubmittingReview, setSubmittingReview] = useState(false);
+
 
     const loadData = async () => {
         if (!user) return;
@@ -52,6 +61,12 @@ const Rentals = () => {
             loadData();
         }, [user])
     );
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await loadData();
+        setRefreshing(false);
+    }
 
     // Admin Modal State
     const handleLongPress = (item: Booking) => {
@@ -78,11 +93,33 @@ const Rentals = () => {
         }
     };
 
-    const onRefresh = async () => {
-        setRefreshing(true);
-        await loadData();
-        setRefreshing(false);
-    }
+    // 2. Rating Logic
+    const handleRateClick = (item: Booking) => {
+        setSelectedBooking(item);
+        setRatingModalVisible(true);
+    };
+
+    const handleSubmitReview = async (rating: number, comment: string) => {
+        if (!selectedBooking) return;
+
+        try {
+            setSubmittingReview(true);
+            await addReview(
+                selectedBooking.id,
+                selectedBooking.itemId,
+                rating,
+                comment
+            );
+
+            Toast.show({ type: 'success', text1: 'Thank You!', text2: 'Review submitted successfully.' });
+            setRatingModalVisible(false);
+            loadData(); // Refresh list to update UI (show "Rated")
+        } catch (error: any) {
+            Toast.show({ type: 'error', text1: 'Error', text2: error.message });
+        } finally {
+            setSubmittingReview(false);
+        }
+    };
 
     const getCalculatedStatus = (booking: Booking) => {
         const endDate = parseISO(booking.endDate);
@@ -217,9 +254,21 @@ const Rentals = () => {
                             </Text>
                         </View>
                     ) : (
-                        <View style={{ backgroundColor: '#333333' }} className="px-6 py-3 rounded-xl">
-                            <Text className="text-[#666666] text-xs font-black uppercase">Completed</Text>
-                        </View>
+                        //  UPDATED: Rating Buttons for Completed Items
+                        !item.isRated ? (
+                            <TouchableOpacity
+                                onPress={() => handleRateClick(item)}
+                                style={{ backgroundColor: '#B4F05F', shadowColor: '#B4F05F', shadowOpacity: 0.3, shadowRadius: 8 }}
+                                className="px-5 py-2.5 rounded-xl flex-row items-center gap-2"
+                            >
+                                <Ionicons name="star" size={14} color="black" />
+                                <Text className="text-black text-[10px] font-black uppercase">Rate Gear</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <View style={{ backgroundColor: '#333333' }} className="px-6 py-3 rounded-xl">
+                                <Text className="text-[#666666] text-xs font-black uppercase">Completed</Text>
+                            </View>
+                        )
                     )}
                 </View>
             </TouchableOpacity>
@@ -287,6 +336,15 @@ const Rentals = () => {
                 onConfirm={handleConfirmReturn}
                 itemName={selectedBooking?.itemName || "Item"}
                 loading={loading}
+            />
+
+            {/* Rating Modal */}
+            <RatingModal
+                isVisible={isRatingModalVisible}
+                onClose={() => setRatingModalVisible(false)}
+                onSubmit={handleSubmitReview}
+                itemName={selectedBooking?.itemName || "Item"}
+                isSubmitting={isSubmittingReview}
             />
         </View>
     );

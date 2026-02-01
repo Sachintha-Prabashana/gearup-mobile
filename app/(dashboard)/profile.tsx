@@ -8,7 +8,7 @@ import {
     RefreshControl,
     ActivityIndicator,
     StatusBar,
-    StyleSheet
+    StyleSheet, Linking
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +17,7 @@ import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Components
-import LogoutModal from "@/components/LogoutModal";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 // Hooks
 import { useAuth } from "@/hooks/useAuth";
@@ -106,6 +106,12 @@ export default function Profile() {
             hideLoader();
             console.error(error);
         }
+    };
+
+    const handleSupport = () => {
+        const phone = "947XXXXXXXX";
+        const msg = "Hi! I need help with CamMart app.";
+        Linking.openURL(`whatsapp://send?phone=${phone}&text=${msg}`);
     };
 
     const ModernMenuItem = ({ icon, label, onPress, isDestructive = false, subtitle = "" }: any) => (
@@ -254,7 +260,7 @@ export default function Profile() {
                     <ModernMenuItem
                         icon="chatbubble-ellipses-outline"
                         label="Customer Support"
-                        onPress={() => {}}
+                        onPress={handleSupport}
                     />
                     <ModernMenuItem
                         icon="log-out-outline"
@@ -270,10 +276,15 @@ export default function Profile() {
 
             </ScrollView>
 
-            <LogoutModal
+            <ConfirmationModal
                 isVisible={isLogoutVisible}
                 onClose={() => setLogoutVisible(false)}
                 onConfirm={confirmLogout}
+                title="Sign Out"
+                message="Are you sure you want to log out? You'll need to sign back in."
+                confirmText="Logout"
+                icon="log-out-outline"
+                isDanger={true}
             />
         </View>
     );
