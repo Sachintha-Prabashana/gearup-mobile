@@ -18,9 +18,10 @@ import { format, differenceInDays, parseISO, isPast, isToday, isFuture } from 'd
 import Toast from 'react-native-toast-message';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import AdminActionModal from "@/components/AdminActionModal";
 
 // Services
-import { getUserBookings, returnItem, Booking } from "@/service/bookingService";
+import { getUserBookings, Booking, markBookingAsCompleted } from "@/service/bookingService";
 import { useAuth } from "@/hooks/useAuth";
 
 const Rentals = () => {
@@ -31,6 +32,8 @@ const Rentals = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+    const [isAdminModalVisible, setAdminModalVisible] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
     const loadData = async () => {
         if (!user) return;
@@ -49,6 +52,31 @@ const Rentals = () => {
             loadData();
         }, [user])
     );
+
+    // Admin Modal State
+    const handleLongPress = (item: Booking) => {
+        setSelectedBooking(item);
+        setAdminModalVisible(true);
+    };
+
+    // Dev Only:
+    const handleConfirmReturn = async () => {
+        if (!selectedBooking) return;
+
+        try {
+            setLoading(true);
+
+            await markBookingAsCompleted(selectedBooking.id, selectedBooking.itemId);
+
+            Toast.show({ type: 'success', text1: 'Success', text2: 'Item marked as returned' });
+            setAdminModalVisible(false);
+            loadData();
+        } catch (error: any) {
+            Toast.show({ type: 'error', text1: 'Error', text2: error.message });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -98,31 +126,6 @@ const Rentals = () => {
         return { text: 'Rental Completed', color: 'text-[#666666]' };
     };
 
-    const handleReturn = (item: Booking) => {
-        Alert.alert(
-            "Return Item",
-            `Confirm return of ${item.itemName}?`,
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Confirm",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            setLoading(true);
-                            await returnItem(item.id, item.itemId);
-                            Toast.show({ type: 'success', text1: 'Success', text2: 'Item returned successfully' });
-                            loadData();
-                        } catch (error: any) {
-                            Toast.show({ type: 'error', text1: 'Error', text2: error.message });
-                            setLoading(false);
-                        }
-                    }
-                }
-            ]
-        );
-    };
-
     const displayData = activeTab === 'current'
         ? bookings.filter(b => ['active', 'overdue'].includes(getCalculatedStatus(b)))
         : bookings.filter(b => ['completed', 'cancelled'].includes(getCalculatedStatus(b)));
@@ -144,6 +147,7 @@ const Rentals = () => {
         return (
             <TouchableOpacity
                 activeOpacity={0.9}
+                onLongPress={() => handleLongPress(item)}
                 style={{ backgroundColor: '#1A1A1A', borderColor: status === 'overdue' ? '#EF444450' : '#2A2A2A' }}
                 className="p-5 mb-5 rounded-[28px] border"
                 onPress={() => router.push({ pathname: "/product/[id]", params: { id: item.itemId } })}
@@ -195,15 +199,23 @@ const Rentals = () => {
                     </View>
 
                     {(status === 'active' || status === 'overdue') ? (
-                        <TouchableOpacity
-                            onPress={() => handleReturn(item)}
-                            style={{ backgroundColor: status === 'overdue' ? '#EF4444' : '#B4F05F' }}
-                            className="px-6 py-3 rounded-xl active:scale-95"
+                        <View
+                            style={{
+                                backgroundColor: status === 'overdue' ? '#EF444420' : '#1A1A1A',
+                                borderColor: status === 'overdue' ? '#EF4444' : '#333333',
+                                borderWidth: 1
+                            }}
+                            className="px-4 py-2 rounded-xl"
                         >
-                            <Text style={{ color: status === 'overdue' ? '#FFFFFF' : '#000000' }} className="text-xs font-black uppercase">
-                                {status === 'overdue' ? 'Return Now' : 'Return Item'}
+                            <Text
+                                style={{
+                                    color: status === 'overdue' ? '#EF4444' : '#B4F05F'
+                                }}
+                                className="text-[10px] font-black uppercase"
+                            >
+                                {status === 'overdue' ? 'Visit Store Immediately' : `Return by ${format(parseISO(item.endDate), 'MMM dd')}`}
                             </Text>
-                        </TouchableOpacity>
+                        </View>
                     ) : (
                         <View style={{ backgroundColor: '#333333' }} className="px-6 py-3 rounded-xl">
                             <Text className="text-[#666666] text-xs font-black uppercase">Completed</Text>
@@ -267,6 +279,15 @@ const Rentals = () => {
                     />
                 )}
             </SafeAreaView>
+
+             {/*Admin Action Modal*/}
+            <AdminActionModal
+                isVisible={isAdminModalVisible}
+                onClose={() => setAdminModalVisible(false)}
+                onConfirm={handleConfirmReturn}
+                itemName={selectedBooking?.itemName || "Item"}
+                loading={loading}
+            />
         </View>
     );
 };

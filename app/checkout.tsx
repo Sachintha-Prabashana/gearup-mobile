@@ -320,7 +320,7 @@ const Checkout = () => {
                             <Text className="text-white font-black">Rs. {basePrice.toLocaleString()}</Text>
                         </View>
                         <View className="flex-row justify-between mb-3">
-                            <Text className="text-[#999999] font-bold underline">CamMart service fee</Text>
+                            <Text className="text-[#999999] font-bold underline">GearUp service fee</Text>
                             <Text className="text-white font-black">Rs. {serviceFee.toLocaleString()}</Text>
                         </View>
                         <View className="flex-row justify-between mb-3">

@@ -16,12 +16,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 
 import { getCategories, getGearByCategory, getTrendingGear } from '@/service/gearService';
 import { toggleFavorite, getUserFavoriteIds } from "@/service/favoriteService";
-import { getUserProfile, updateUserProfile } from "@/service/userService";
+import { getUserProfile, updateUserProfile, savePushToken } from "@/service/userService";
 import { useAuth } from "@/hooks/useAuth";
 import PromoCarousel from "@/components/PromoCarousel";
 import SkeletonCard from "@/components/SkeletonCard";
@@ -45,7 +44,7 @@ const Home = () => {
     const { showLoader, hideLoader } = useLoader();
 
     //  NEW: Get Push Token
-    // const { expoPushToken } = usePushNotifications();
+    const { expoPushToken } = usePushNotifications();
 
     // --- STATE ---
     const [activeCategoryId, setActiveCategoryId] = useState<number>(1);
@@ -62,6 +61,7 @@ const Home = () => {
 
     // --- DATA LOADING ---
     useEffect(() => {
+        if (!user) return;
         const loadBaseData = async () => {
             try {
                 const [catsData, trendsData] = await Promise.all([
@@ -97,26 +97,18 @@ const Home = () => {
     }, [user]);
 
     useEffect(() => {
-        console.log("👤 Current User:", user);
+        console.log("Current User:", user);
     }, [user]);
 
-    //  NEW: Save Push Token to Firestore
-    // useEffect(() => {
-    //     const saveTokenToBackend = async () => {
-    //         if (user?.uid && expoPushToken) {
-    //             try {
-    //                 const userRef = doc(db, "users", user.uid);
-    //                 await updateDoc(userRef, {
-    //                     pushToken: expoPushToken
-    //                 });
-    //                 console.log(" Token saved to Firestore for user:", user.uid);
-    //             } catch (error) {
-    //                 console.error(" Error saving token:", error);
-    //             }
-    //         }
-    //     };
-    //     saveTokenToBackend();
-    // }, [user, expoPushToken]);
+    //  NEW: Save Push Token using service whenever it changes
+    useEffect(() => {
+        const syncToken = async () => {
+            if (user?.uid && expoPushToken) {
+                await savePushToken(user.uid, expoPushToken);
+            }
+        };
+        syncToken();
+    }, [user, expoPushToken]);
 
     // --- 2. HANDLE LOCATION UPDATE ---
     const handleLocationUpdate = async (details: { address: string; city: string; lat: number; lng: number }) => {

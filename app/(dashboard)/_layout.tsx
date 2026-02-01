@@ -34,12 +34,12 @@ const tabs = [
         icon: "bag-handle-outline",
         activeIcon: "bag-handle"
     },
-    {
-        name: "inbox",
-        title: "Inbox",
-        icon: "chatbubble-ellipses-outline",
-        activeIcon: "chatbubble-ellipses"
-    },
+    // {
+    //     name: "inbox",
+    //     title: "Inbox",
+    //     icon: "chatbubble-ellipses-outline",
+    //     activeIcon: "chatbubble-ellipses"
+    // },
     {
         name: "profile",
         title: "Profile",

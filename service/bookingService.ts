@@ -114,47 +114,54 @@ export const getUserBookings = async (): Promise<Booking[]> => {
     }
 }
 
-export const returnItem = async (bookingId: string, itemId: string) => {
+export const markBookingAsCompleted = async (bookingId: string, itemId: string) => {
     try {
         const user = auth.currentUser;
-        if (!user) throw new Error("User not authenticated");
+        if (!user) throw new Error("Authentication required to process return.");
 
         await runTransaction(db, async (transaction) => {
+            // 1. References
             const bookingRef = doc(db, "bookings", bookingId);
             const itemRef = doc(db, "products", itemId);
 
+            // 2.
             const bookingDoc = await transaction.get(bookingRef);
             const itemDoc = await transaction.get(itemRef);
 
-            if (!bookingDoc.exists()) throw new Error("Booking not found");
-            if (!itemDoc.exists()) throw new Error("Item not found");
+            if (!bookingDoc.exists()) throw new Error("Booking record not found.");
+            if (!itemDoc.exists()) throw new Error("Item record not found.");
 
             const bookingData = bookingDoc.data();
 
-            if (bookingData.status === 'completed' || bookingData.isReturned) {
-                throw new Error("Item is already returned.");
+            // 3. Validation:
+            if (bookingData.status === 'completed') {
+                throw new Error("This order is already marked as returned.");
             }
 
-            // A. Booking Update (Complete)
+            // --- TRANSACTION OPERATIONS ---
+
+            // A. Update Booking Status
             transaction.update(bookingRef, {
                 status: 'completed',
                 isReturned: true,
-                returnedAt: serverTimestamp()
+                returnedAt: serverTimestamp(),
+                processedBy: user.uid
             });
 
-            // B. Stock Update (+1)
+            // B. Update  Stock (Inventory)
+
             const currentQty = Number(itemDoc.data().quantity || 0);
             transaction.update(itemRef, {
                 quantity: currentQty + 1
             });
         });
 
-        console.log(" Return Successful");
+        console.log("Return processed successfully & Stock updated.");
         return { success: true };
 
     } catch (error: any) {
-        console.error(" Error returning item:", error);
-        throw new Error(error.message || "Failed to return item");
+        console.error("Error processing return:", error);
+        throw new Error(error.message || "Failed to process return.");
     }
 };
 

@@ -144,6 +144,20 @@ export const getUserStats = async (userId: string) => {
     }
 };
 
+export const savePushToken = async (userId: string, token: string) => {
+    try {
+        const userRef = doc(db, "users", userId);
+
+        await updateDoc(userRef, {
+            pushToken: token
+        });
+
+        console.log(`Push Token saved via Service for user: ${userId}`);
+    } catch (error) {
+        console.error("Error saving push token:", error);
+    }
+}
+
 export const logoutUser = async () => {
     try {
         await auth.signOut();
