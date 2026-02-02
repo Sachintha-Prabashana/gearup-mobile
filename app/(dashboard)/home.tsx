@@ -29,9 +29,7 @@ import FeaturedCard from "@/components/FeaturedCard";
 import LocationPickerModal from "@/components/LocationPickerModal";
 import { useLoader } from "@/hooks/useLoader";
 import {usePushNotifications} from "@/hooks/usePushNotifications";
-import {doc} from "@firebase/firestore";
-import {db} from "@/service/firebase";
-import {updateDoc} from "firebase/firestore";
+
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);

@@ -162,7 +162,7 @@ export const searchGearItems = async (searchText: string) => {
 
     try {
         const searchLower = searchText.toLowerCase();
-        const productsRef = collection(db, "products"); // ✅ Collection Name Check කරන්න
+        const productsRef = collection(db, "products"); //  Collection Name Check කරන්න
 
         //  Industry Standard Query:
         // Using 'array-contains' on precomputed 'searchKeywords' field

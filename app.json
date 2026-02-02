@@ -14,7 +14,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#1A1A1A",
-        "foregroundImage": "./assets/images/adaptive-icon.jpg",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -25,7 +25,11 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECORD_AUDIO",
-        "NOTIFICATIONS"
+        "android.permission.NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.NOTIFICATIONS"
       ]
     },
     "web": {
@@ -81,6 +85,12 @@
       "eas": {
         "projectId": "1cf1e988-880b-49df-a081-44fe343e162c"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/1cf1e988-880b-49df-a081-44fe343e162c"
     }
   }
 }
