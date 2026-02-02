@@ -21,6 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AdminActionModal from "@/components/AdminActionModal";
 import { addReview } from "@/service/ratingService";
 import RatingModal from "@/components/RatingModal";
+import BookingQRModal from "@/components/BookingQRModal";
 
 // Services
 import { getUserBookings, Booking, markBookingAsCompleted } from "@/service/bookingService";
@@ -42,6 +43,9 @@ const Rentals = () => {
     // Rating States
     const [isRatingModalVisible, setRatingModalVisible] = useState(false);
     const [isSubmittingReview, setSubmittingReview] = useState(false);
+
+    // QR Code State
+    const [isQRModalVisible, setQRModalVisible] = useState(false);
 
 
     const loadData = async () => {
@@ -119,6 +123,12 @@ const Rentals = () => {
         } finally {
             setSubmittingReview(false);
         }
+    };
+
+    // QR Logic
+    const handleViewTicket = (item: Booking) => { 
+        setSelectedBooking(item);
+        setQRModalVisible(true);
     };
 
     const getCalculatedStatus = (booking: Booking) => {
@@ -229,46 +239,63 @@ const Rentals = () => {
                     )}
                 </View>
 
-                <View className="flex-row justify-between items-center">
-                    <View className="flex-row items-baseline">
-                        <Text className="text-lg font-black text-white">Rs.{item.totalPrice?.toLocaleString()}</Text>
-                        <Text className="text-[#666666] text-[10px] font-bold ml-1">total</Text>
-                    </View>
-
+               {/* Footer Buttons */}
+                <View className="mt-2">
                     {(status === 'active' || status === 'overdue') ? (
-                        <View
-                            style={{
-                                backgroundColor: status === 'overdue' ? '#EF444420' : '#1A1A1A',
-                                borderColor: status === 'overdue' ? '#EF4444' : '#333333',
-                                borderWidth: 1
-                            }}
-                            className="px-4 py-2 rounded-xl"
-                        >
-                            <Text
-                                style={{
-                                    color: status === 'overdue' ? '#EF4444' : '#B4F05F'
-                                }}
-                                className="text-[10px] font-black uppercase"
+                        <View className="flex-row items-stretch gap-3">
+                            
+                            {/* 1. Ticket Button (Expanded) */}
+                            <TouchableOpacity
+                                onPress={() => handleViewTicket(item)}
+                                style={{ backgroundColor: '#333333' }}
+                                className="flex-1 py-3 rounded-xl flex-row justify-center items-center gap-2 active:scale-95"
                             >
-                                {status === 'overdue' ? 'Visit Store Immediately' : `Return by ${format(parseISO(item.endDate), 'MMM dd')}`}
-                            </Text>
+                                <Ionicons name="qr-code-outline" size={16} color="white" />
+                                <Text className="text-white text-[11px] font-black uppercase tracking-wider">
+                                    Ticket
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* 2. Return Status Badge (Fixed Width based on content) */}
+                            <View
+                                style={{
+                                    backgroundColor: status === 'overdue' ? '#EF444420' : '#1A1A1A',
+                                    borderColor: status === 'overdue' ? '#EF4444' : '#333333',
+                                    borderWidth: 1
+                                }}
+                                className="px-5 py-3 rounded-xl justify-center items-center"
+                            >
+                                <Text
+                                    style={{ color: status === 'overdue' ? '#EF4444' : '#B4F05F' }}
+                                    className="text-[10px] font-black uppercase tracking-wider"
+                                >
+                                    {status === 'overdue' ? 'Overdue' : `Return: ${format(parseISO(item.endDate), 'MMM dd')}`}
+                                </Text>
+                            </View>
                         </View>
                     ) : (
-                        //  UPDATED: Rating Buttons for Completed Items
-                        !item.isRated ? (
-                            <TouchableOpacity
-                                onPress={() => handleRateClick(item)}
-                                style={{ backgroundColor: '#B4F05F', shadowColor: '#B4F05F', shadowOpacity: 0.3, shadowRadius: 8 }}
-                                className="px-5 py-2.5 rounded-xl flex-row items-center gap-2"
-                            >
-                                <Ionicons name="star" size={14} color="black" />
-                                <Text className="text-black text-[10px] font-black uppercase">Rate Gear</Text>
-                            </TouchableOpacity>
-                        ) : (
-                            <View style={{ backgroundColor: '#333333' }} className="px-6 py-3 rounded-xl">
-                                <Text className="text-[#666666] text-xs font-black uppercase">Completed</Text>
+                        // History Items (Completed/Cancelled)
+                        <View className="flex-row items-center justify-between w-full mt-1">
+                            <View className="flex-row items-baseline">
+                                <Text className="text-lg font-black text-white">Rs.{item.totalPrice?.toLocaleString()}</Text>
+                                <Text className="text-[#666666] text-[10px] font-bold ml-1">total</Text>
                             </View>
-                        )
+
+                            {!item.isRated ? (
+                                <TouchableOpacity
+                                    onPress={() => handleRateClick(item)}
+                                    style={{ backgroundColor: '#B4F05F', shadowColor: '#B4F05F', shadowOpacity: 0.3, shadowRadius: 8 }}
+                                    className="px-5 py-2.5 rounded-xl flex-row items-center gap-2"
+                                >
+                                    <Ionicons name="star" size={14} color="black" />
+                                    <Text className="text-black text-[10px] font-black uppercase">Rate</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <View style={{ backgroundColor: '#333333' }} className="px-6 py-3 rounded-xl">
+                                    <Text className="text-[#666666] text-xs font-black uppercase">Completed</Text>
+                                </View>
+                            )}
+                        </View>
                     )}
                 </View>
             </TouchableOpacity>
@@ -345,6 +372,13 @@ const Rentals = () => {
                 onSubmit={handleSubmitReview}
                 itemName={selectedBooking?.itemName || "Item"}
                 isSubmitting={isSubmittingReview}
+            />
+
+            <BookingQRModal
+                visible={isQRModalVisible}
+                onClose={() => setQRModalVisible(false)}
+                bookingId={selectedBooking?.id || ""}
+                itemName={selectedBooking?.itemName || "Rental Item"}
             />
         </View>
     );

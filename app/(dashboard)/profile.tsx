@@ -249,11 +249,11 @@ export default function Profile() {
                         label="Personal Details"
                         onPress={() => router.push("/profile/personal-info")}
                     />
-                    <ModernMenuItem
-                        icon="wallet-outline"
-                        label="Payments"
-                        onPress={() => router.push("/profile/payments")}
-                    />
+                    {/*<ModernMenuItem*/}
+                    {/*    icon="wallet-outline"*/}
+                    {/*    label="Payments"*/}
+                    {/*    onPress={() => router.push("/profile/payments")}*/}
+                    {/*/>*/}
 
                     <Text className="text-[11px] font-black text-[#666666] uppercase tracking-[3px] mb-5 mt-8 ml-2">Support</Text>
 
@@ -271,7 +271,7 @@ export default function Profile() {
                 </View>
 
                 <View className="items-center mb-8">
-                    <Text className="text-[#333333] text-[9px] font-black tracking-[6px] uppercase">CamMart v1.0.0</Text>
+                    <Text className="text-[#333333] text-[9px] font-black tracking-[6px] uppercase">GearUp v1.0.0</Text>
                 </View>
 
             </ScrollView>
