@@ -17,7 +17,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 // Import Services & Components
 import ReviewsSection from "@/components/Product/ReviewSection";
-import LocationSection from "@/components/Product/LocationSection";
 import DateSelectModal from "@/components/Product/DateSelectModal";
 import { getGearById } from "@/service/gearService";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +24,7 @@ import { useLoader } from "@/hooks/useLoader";
 import { checkUserVerification } from "@/service/authService";
 import { checkIsFavorite, toggleFavorite } from "@/service/favoriteService";
 import Toast from 'react-native-toast-message';
+import StoreLocationCard from '@/components/StoreLocationCard';
 
 const { width } = Dimensions.get('window');
 
@@ -312,7 +312,7 @@ export default function ProductDetails() {
                         rating={item.rating || item.averageRating || 0}
                         count={item.reviewCount || item.ratingCount || 0}
                     />
-                    <LocationSection />
+                    <StoreLocationCard />
                     <View className="h-10"/>
                 </View>
             </ScrollView>
