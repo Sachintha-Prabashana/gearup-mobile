@@ -109,7 +109,7 @@ export default function Profile() {
     };
 
     const handleSupport = () => {
-        const phone = "947XXXXXXXX";
+        const phone = "94762717290";
         const msg = "Hi! I need help with CamMart app.";
         Linking.openURL(`whatsapp://send?phone=${phone}&text=${msg}`);
     };
@@ -254,6 +254,13 @@ export default function Profile() {
                     {/*    label="Payments"*/}
                     {/*    onPress={() => router.push("/profile/payments")}*/}
                     {/*/>*/}
+
+                    <ModernMenuItem
+                        icon="map-outline"
+                        label="Our Locations"
+                        subtitle="Find nearest pickup point"
+                        onPress={() => router.push("/store-locations")}
+                    />
 
                     <Text className="text-[11px] font-black text-[#666666] uppercase tracking-[3px] mb-5 mt-8 ml-2">Support</Text>
 
