@@ -1,0 +1,31 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1024" height="1024" fill="#000000"/>
+
+    <g transform="translate(0, -60)">
+
+        <path d="M690 380 C650 320 580 280 512 280 C390.5 280 292 378.5 292 500 C292 621.5 390.5 720 512 720 C610 720 690 660 720 580 L720 500 L512 500"
+              stroke="#B4F05F"
+              stroke-width="70"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"/>
+
+        <circle cx="512" cy="500" r="100" fill="#1A1A1A" stroke="#B4F05F" stroke-width="10"/>
+
+        <circle cx="512" cy="500" r="40" fill="#B4F05F"/>
+
+        <path d="M600 350 Q650 400 620 450" stroke="white" stroke-width="15" stroke-opacity="0.3" stroke-linecap="round"/>
+        <circle cx="450" cy="600" r="15" fill="white" fill-opacity="0.2"/>
+
+    </g>
+
+    <g transform="translate(512 820)">
+        <text x="0" y="0" font-family="Arial, sans-serif" font-weight="900" font-size="140" text-anchor="middle" fill="#FFFFFF" letter-spacing="-4">
+            GEAR<tspan fill="#B4F05F">UP</tspan>
+        </text>
+
+        <text x="0" y="80" font-family="Arial, sans-serif" font-weight="bold" font-size="36" text-anchor="middle" fill="#666666" letter-spacing="10">
+            RENT . USE . RETURN
+        </text>
+    </g>
+</svg>

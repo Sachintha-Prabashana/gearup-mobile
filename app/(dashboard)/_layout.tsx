@@ -1,10 +1,11 @@
 import React from "react"
-import { View, Platform } from "react-native"
-import { Tabs } from "expo-router"
+import {View, Platform, ActivityIndicator} from "react-native"
+import {Redirect, Tabs} from "expo-router"
 import { Ionicons } from "@expo/vector-icons" // Switched to Ionicons for cleaner "Airbnb" look
 // import UserHeader from "@/components/UserHeader"
 import { StatusBar } from "expo-status-bar"
 import {SafeAreaView} from "react-native-safe-area-context";
+import { useAuth } from "@/hooks/useAuth";
 
 // 1. Define the "Photographic" Palette
 const COLORS = {
@@ -34,12 +35,6 @@ const tabs = [
         icon: "bag-handle-outline",
         activeIcon: "bag-handle"
     },
-    // {
-    //     name: "inbox",
-    //     title: "Inbox",
-    //     icon: "chatbubble-ellipses-outline",
-    //     activeIcon: "chatbubble-ellipses"
-    // },
     {
         name: "profile",
         title: "Profile",
@@ -49,6 +44,24 @@ const tabs = [
 ] as const
 
 const DashboardLayout = () => {
+    //  AUTH GUARD LOGIC START
+    const { user, loading } = useAuth();
+
+    // 1. Loading State (Checking Session)
+    if (loading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+        );
+    }
+
+    // 2. If NO User -> Redirect to Onboarding/Login (/)
+    if (!user) {
+        return <Redirect href="/" />;
+    }
+    //  AUTH GUARD LOGIC END
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <StatusBar style="dark" />

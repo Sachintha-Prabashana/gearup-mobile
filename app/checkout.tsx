@@ -61,8 +61,8 @@ const Checkout = () => {
 
     const fetchPaymentSheetParams = async () => {
         try {
-            const IP_ADDRESS = "192.168.8.189";
-            const response = await fetch(`http://${IP_ADDRESS}:4000/api/payment-sheet`, {
+            const BACKEND_URL = "https://perfect-shawna-spsolutions-6fad7aff.koyeb.app";
+            const response = await fetch(`${BACKEND_URL}/api/payment-sheet`,{
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

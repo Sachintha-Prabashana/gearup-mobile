@@ -5,49 +5,63 @@ import {
     View,
     Image,
     TouchableOpacity,
-    SafeAreaView,
-    StatusBar
+    StatusBar,
+    Dimensions
 } from 'react-native';
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+
+const { width, height } = Dimensions.get('window');
 
 const OnboardingScreen = () => {
     const router = useRouter();
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-            {/* Background Lighting Effect */}
+            {/* Background Gradient */}
             <LinearGradient
-                colors={['#1A1A1A', '#000000']}
+                colors={['#121212', '#000000']}
                 style={StyleSheet.absoluteFillObject}
             />
 
+            {/*  Using SafeAreaView from context */}
             <SafeAreaView style={styles.content}>
-                {/* Top Branding */}
+
+                {/* 1. Header / Branding */}
                 <View style={styles.header}>
-                    <Text style={styles.brandName}>CamMart</Text>
+                    <View style={styles.logoContainer}>
+                        <Text style={styles.brandTextWhite}>Gear</Text>
+                        <Text style={styles.brandTextGreen}>Up</Text>
+                    </View>
                 </View>
 
-                {/* Hero Section */}
+                {/* 2. Hero Section (Image & Title) */}
                 <View style={styles.heroSection}>
-                    <Text style={styles.mainTitle}>
-                        Capture Life in{"\n"}Every Frame
-                    </Text>
+                    <View style={styles.imageContainer}>
+                        {/* Glow Effect behind the camera/lens */}
+                        <View style={styles.glowEffect} />
 
-                    <Image
-                        source={require('@/assets/images/onboarding-lens-removebg-preview.png')}
-                        // source={{ uri: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1000&auto=format&fit=crop' }}
-                        style={styles.lensImage}
-                        resizeMode="contain"
-                    />
+                        <Image
+                            source={require('@/assets/images/onboarding-lens-removebg-preview.png')}
+                            style={styles.lensImage}
+                            resizeMode="contain"
+                        />
+                    </View>
+
+                    <Text style={styles.mainTitle}>
+                        Rent Premium{"\n"}
+                        <Text style={{ color: '#B4F05F' }}>Gear</Text> Anytime.
+                    </Text>
                 </View>
 
-                {/* Action Footer */}
+                {/* 3. Footer (Description & Button) */}
                 <View style={styles.footer}>
                     <Text style={styles.description}>
-                        Discover, Compare, and Buy the Best Cameras and Accessories at Unbeatable Prices.
+                        Access top-tier photography equipment without breaking the bank. Rent, shoot, and return with ease.
                     </Text>
 
                     <TouchableOpacity
@@ -56,8 +70,10 @@ const OnboardingScreen = () => {
                         onPress={() => router.push("/login")}
                     >
                         <Text style={styles.buttonText}>Get Started</Text>
+                        <Ionicons name="arrow-forward" size={20} color="black" />
                     </TouchableOpacity>
                 </View>
+
             </SafeAreaView>
         </View>
     );
@@ -70,62 +86,94 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: 25,
         justifyContent: 'space-between',
+        paddingHorizontal: 24,
     },
     header: {
-        marginTop: 10,
+        marginTop: 20,
+        alignItems: 'center',
     },
-    brandName: {
+    logoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    brandTextWhite: {
         color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: '700',
-        letterSpacing: 0.5,
+        fontSize: 24,
+        fontWeight: '900',
+        letterSpacing: -1,
+    },
+    brandTextGreen: {
+        color: '#B4F05F',
+        fontSize: 24,
+        fontWeight: '900',
+        letterSpacing: -1,
     },
     heroSection: {
-        flex: 2,
+        flex: 1,
         justifyContent: 'center',
-        alignItems: 'flex-start',
+        alignItems: 'center',
+        marginTop: 20,
     },
-    mainTitle: {
-        color: '#FFFFFF',
-        fontSize: 40,
-        fontWeight: '800',
-        lineHeight: 48,
-        marginBottom: 20,
+    imageContainer: {
+        width: width * 0.9,
+        height: height * 0.4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 30,
+        position: 'relative',
+    },
+    glowEffect: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        backgroundColor: '#64FFDA',
+        opacity: 0.2,
+        borderRadius: 100,
+        transform: [{ scale: 1.6 }],
     },
     lensImage: {
         width: '100%',
-        height: 320,
-        alignSelf: 'center',
+        height: '100%',
+    },
+    mainTitle: {
+        color: '#FFFFFF',
+        fontSize: 36,
+        fontWeight: '800',
+        textAlign: 'center',
+        lineHeight: 44,
     },
     footer: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        paddingBottom: 40,
+        marginBottom: 20,
     },
     description: {
         color: '#999999',
         fontSize: 15,
-        lineHeight: 22,
-        marginBottom: 30,
-        maxWidth: '90%',
+        textAlign: 'center',
+        lineHeight: 24,
+        marginBottom: 32,
+        paddingHorizontal: 20,
     },
     button: {
-        backgroundColor: '#B4F05F', // Lime green from your screenshot
-        paddingVertical: 18,
-        borderRadius: 16,
+        backgroundColor: '#B4F05F',
+        flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
+        paddingVertical: 18,
+        borderRadius: 20,
         shadowColor: '#B4F05F',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
         elevation: 5,
+        gap: 8,
     },
     buttonText: {
         color: '#000000',
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 16,
+        fontWeight: '900',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
 });
 

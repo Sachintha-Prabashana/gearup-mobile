@@ -1,0 +1,16 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g id="main-logo">
+        <path d="M690 380 C650 320 580 280 512 280 C390.5 280 292 378.5 292 500 C292 621.5 390.5 720 512 720 C610 720 690 660 720 580 L720 500 L512 500"
+              stroke="#B4F05F"
+              stroke-width="70"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+
+        <circle cx="512" cy="500" r="100" stroke="#B4F05F" stroke-width="10"/>
+
+        <circle cx="512" cy="500" r="40" fill="#B4F05F"/>
+
+        <path d="M600 350 Q650 400 620 450" stroke="white" stroke-width="15" stroke-opacity="0.3" stroke-linecap="round"/>
+        <circle cx="450" cy="600" r="15" fill="white" fill-opacity="0.2"/>
+    </g>
+</svg>
