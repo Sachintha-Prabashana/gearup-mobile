@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, Image, Alert, Modal, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert, Modal, StyleSheet, Linking, Platform } from 'react-native';
 import React, { useEffect, useState } from 'react';
 
 import { useLoader } from "@/hooks/useLoader";
@@ -13,6 +13,7 @@ import { getUserProfile, updateUserProfile } from "@/service/userService";
 import { useAuth } from "@/hooks/useAuth";
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import StoreLocationCard from '@/components/StoreLocationCard';
 
 const Checkout = () => {
     const router = useRouter();
@@ -92,13 +93,48 @@ const Checkout = () => {
             const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
 
             const { error } = await initPaymentSheet({
-                merchantDisplayName: "CamMart Rentals",
+                merchantDisplayName: "GearUp Rentals",
                 customerId: customer,
                 customerEphemeralKeySecret: ephemeralKey,
                 paymentIntentClientSecret: paymentIntent,
                 defaultBillingDetails: {
                     name: user?.displayName || 'Sachintha Prabashana',
                 },
+
+                // Add this appearance object: for ui cutomization
+                appearance: {
+                    colors: {
+                        primary: '#B4F05F',         // Brand Color (Neon Green) - For buttons, etc.
+                        background: '#121212',      // Payment Sheet Background (Dark)
+                        componentBackground: '#1A1A1A', // Background for input fields/cards
+                        componentBorder: '#333333',     // Border color for inputs
+                        componentDivider: '#333333',    // Divider lines
+                        primaryText: '#FFFFFF',     // Main text color
+                        secondaryText: '#999999',   // Subtitle/label text color
+                        componentText: '#FFFFFF',   // Input text color
+                        placeholderText: '#666666', // Placeholder text color
+                        icon: '#B4F05F',            // Icon color (e.g., card brand icons)
+                        error: '#EF4444',           // Error message color
+                    },
+                    shapes: {
+                        borderRadius: 12,           // Rounded corners for inputs
+                        borderWidth: 1,             // Border width for inputs
+                    },
+                    primaryButton: {
+                        colors: {
+                            background: '#B4F05F',  // Pay button background color
+                            text: '#000000',        // Pay button text color
+                            border: '#B4F05F',      // Pay button border color
+                        },
+                        shapes: {
+                            borderRadius: 12,       // Pay button roundness
+                        },
+                    },
+                    // Optional: Custom font
+                    // typography: {
+                    //     fontResId: 'your_custom_font_name',
+                    // }
+                }
             });
 
             hideLoader();
@@ -140,17 +176,17 @@ const Checkout = () => {
 
             hideLoader();
 
-            Toast.show({
-                type: 'success',
-                text1: 'Booking Confirmed! 🎉',
-                text2: 'Your gear is ready for pickup.',
-                position: 'top'
-            });
+            // Toast.show({
+            //     type: 'success',
+            //     text1: 'Booking Confirmed! 🎉',
+            //     text2: 'Your gear is ready for pickup.',
+            //     position: 'top'
+            // });
 
             setTimeout(() => {
                 router.dismissAll();
-                router.replace("/(dashboard)/home");
-            }, 2000);
+                router.replace("/orderSuccess");
+            }, 1000);
 
         } catch (error: any) {
             hideLoader();
@@ -201,6 +237,23 @@ const Checkout = () => {
         } catch (error) {
             hideLoader();
             Toast.show({ type: 'error', text1: 'Save Failed', text2: 'Could not save location.' });
+        }
+    };
+
+    const handleGetDirections = () => {
+        const lat = 6.9128; 
+        const lng = 79.8654;
+        const label = "GearUp Colombo Store";
+
+        const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
+        const latLng = `${lat},${lng}`;
+        const url = Platform.select({
+            ios: `${scheme}${label}@${latLng}`,
+            android: `${scheme}${latLng}(${label})`
+        });
+
+        if (url) {
+            Linking.openURL(url);
         }
     };
 
@@ -276,6 +329,9 @@ const Checkout = () => {
                             </TouchableOpacity>
                         )}
                     </View>
+
+                    {/* --- PICKUP LOCATION (MAP SECTION)  --- */}
+                    <StoreLocationCard />
 
                     {/* --- 3. PAYMENT METHOD --- */}
                     <View style={{ borderColor: '#1A1A1A' }} className="mb-8 border-b pb-6">
