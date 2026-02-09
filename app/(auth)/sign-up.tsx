@@ -19,7 +19,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useLoader } from "@/hooks/useLoader";
 import { register } from '@/service/authService';
-import { LinearGradient } from 'expo-linear-gradient'; // Ensure expo-linear-gradient is installed
+import { LinearGradient } from 'expo-linear-gradient';
+import { validateEmail, validatePassword } from "@/utils/validators";
+import Toast from "react-native-toast-message"; // Ensure expo-linear-gradient is installed
 
 export default function SignUp() {
     const router = useRouter();
@@ -31,6 +33,13 @@ export default function SignUp() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
+    // --- ERROR STATES ---
+    const [errors, setErrors] = useState({
+        email: null as string | null,
+        password: null as string | null,
+        confirmPassword: null as string | null,
+    });
+
     // UI States
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -39,23 +48,39 @@ export default function SignUp() {
     const handleRegister = async () => {
         if (isLoading) return;
 
-        if (!fullName || !email || !password || !confirmPassword) {
-            Alert.alert("Please fill all fields");
+        // Reset errors
+        const newErrors = {
+            email: validateEmail(email),
+            password: validatePassword(password),
+            confirmPassword: password !== confirmPassword ? "Passwords do not match." : null,
+        };
+
+        setErrors(newErrors);
+
+        // Check if any error exists
+        if (Object.values(newErrors).some(error => error !== null)) {
+            Toast.show({
+                type: 'error',
+                text1: 'Sign Up Failed',
+                text2: 'Please fix the errors in the form.',
+            });
             return;
         }
-
-        if (password !== confirmPassword) {
-            Alert.alert("Passwords do not match");
-            return;
-        }
-
         try {
             showLoader();
             await register(fullName, email, password);
-            Alert.alert("Account created successfully");
+            Toast.show({
+                type: 'success',
+                text1: 'Account Created! 🎉',
+                text2: 'Welcome to GearUp.',
+            });
             router.replace("/(auth)/login");
-        } catch (error) {
-            Alert.alert("Registration Failed");
+        } catch (error: any) {
+            Toast.show({
+                type: 'error',
+                text1: 'Registration Failed',
+                text2: error.message || 'Something went wrong. Please try again.',
+            });
         } finally {
             hideLoader();
         }
@@ -113,34 +138,43 @@ export default function SignUp() {
                                 {/* Email Input */}
                                 <View>
                                     <Text style={styles.inputLabel}>Email Address</Text>
-                                    <View style={[styles.inputContainer, focusedInput === 'email' && styles.inputFocused]}>
-                                        <Ionicons name="mail-outline" size={22} color={focusedInput === 'email' ? "#B4F05F" : "#71717A"} />
+                                    <View style={[styles.inputContainer, { borderColor: focusedInput === 'email' ? '#B4F05F' : '#2A2A2A' }]}>
+                                        <Ionicons
+                                            name="mail-outline"
+                                            size={22}
+                                            color={errors.email ? '#FF4444' : (focusedInput === 'email' ? "#B4F05F" : "#71717A")}
+                                        />
                                         <TextInput
                                             style={styles.textInput}
                                             placeholder="name@example.com"
                                             placeholderTextColor="#52525B"
                                             value={email}
-                                            onChangeText={setEmail}
+                                            onChangeText={(t) => {setEmail(t); setErrors({...errors, email: null})}}
                                             autoCapitalize="none"
                                             keyboardType="email-address"
                                             onFocus={() => setFocusedInput('email')}
                                             onBlur={() => setFocusedInput(null)}
                                         />
                                     </View>
+                                    {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
                                 </View>
 
                                 {/* Password Input */}
                                 <View>
                                     <Text style={styles.inputLabel}>Password</Text>
-                                    <View style={[styles.inputContainer, focusedInput === 'password' && styles.inputFocused]}>
-                                        <Ionicons name="lock-closed-outline" size={22} color={focusedInput === 'password' ? "#B4F05F" : "#71717A"} />
+                                    <View style={[styles.inputContainer, { borderColor: focusedInput === 'password' ? '#B4F05F' : '#2A2A2A'}]}>
+                                        <Ionicons
+                                            name="lock-closed-outline"
+                                            size={22}
+                                            color={errors.password ? '#FF4444' : (focusedInput === 'password' ? "#B4F05F" : "#71717A")}
+                                        />
                                         <TextInput
                                             style={styles.textInput}
                                             placeholder="Create a password"
                                             placeholderTextColor="#52525B"
                                             secureTextEntry={!showPassword}
                                             value={password}
-                                            onChangeText={setPassword}
+                                            onChangeText={(t) => {setPassword(t); setErrors({...errors, password: null})}}
                                             onFocus={() => setFocusedInput('password')}
                                             onBlur={() => setFocusedInput(null)}
                                         />
@@ -148,20 +182,25 @@ export default function SignUp() {
                                             <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#71717A" />
                                         </TouchableOpacity>
                                     </View>
+                                    {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
                                 </View>
 
                                 {/* Confirm Password Input */}
                                 <View>
                                     <Text style={styles.inputLabel}>Confirm Password</Text>
-                                    <View style={[styles.inputContainer, focusedInput === 'confirm' && styles.inputFocused]}>
-                                        <Ionicons name="lock-closed-outline" size={22} color={focusedInput === 'confirm' ? "#B4F05F" : "#71717A"} />
+                                    <View style={[styles.inputContainer, { borderColor: focusedInput === 'confirm' ? '#B4F05F' : '#2A2A2A' }]}>
+                                        <Ionicons
+                                            name="lock-closed-outline"
+                                            size={22}
+                                            color={errors.confirmPassword ? '#FF4444' : (focusedInput === 'confirm' ? "#B4F05F" : "#71717A")}
+                                        />
                                         <TextInput
                                             style={styles.textInput}
                                             placeholder="Re-enter your password"
                                             placeholderTextColor="#52525B"
                                             secureTextEntry={!showConfirmPassword}
                                             value={confirmPassword}
-                                            onChangeText={setConfirmPassword}
+                                            onChangeText={(t) => {setConfirmPassword(t); setErrors({...errors, confirmPassword: null})}}
                                             onFocus={() => setFocusedInput('confirm')}
                                             onBlur={() => setFocusedInput(null)}
                                         />
@@ -169,6 +208,7 @@ export default function SignUp() {
                                             <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#71717A" />
                                         </TouchableOpacity>
                                     </View>
+                                    {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
                                 </View>
                             </View>
 
@@ -231,7 +271,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#1A1A1A',
         borderRadius: 20,
         borderWidth: 1.5,
-        borderColor: '#2A2A2A',
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20
@@ -239,6 +278,14 @@ const styles = StyleSheet.create({
     inputFocused: {
         borderColor: '#B4F05F',
     },
+
+    errorText: {
+        color: '#FF4444',
+        fontSize: 12,
+        marginTop: 4,
+        marginLeft: 8
+    },
+
     textInput: {
         flex: 1,
         color: '#FFFFFF',

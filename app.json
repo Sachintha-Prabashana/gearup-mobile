@@ -22,6 +22,11 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.sachintha001.GearUp",
 
+      "navigationBar": {
+        "backgroundColor": "#000000",
+        "barStyle": "light-content"
+      },
+
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyDkzS-3D1UtAEPLh3AZ2p51LktM8AhzVtw"

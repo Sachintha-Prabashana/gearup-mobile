@@ -19,6 +19,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from "expo-router";
 import { login } from "@/service/authService";
+import {validateEmail, validatePassword} from "@/utils/validators";
+import Toast from "react-native-toast-message";
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -26,20 +28,52 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [focusedInput, setFocusedInput] = useState<string | null>(null);
     const { isLoading, showLoader, hideLoader } = useLoader();
+    const [emailError, setEmailError] = useState<string | null>(null);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
 
     const handleLogin = async () => {
         if (isLoading) return;
-        if (!email || !password) {
-            Alert.alert("Please fill all fields");
+
+        // for remove previous errors
+        setEmailError(null);
+        setPasswordError(null);
+
+        const mailErr = validateEmail(email);
+        const passErr = validatePassword(password)
+
+        if (mailErr || passErr) {
+            setEmailError(mailErr);
+            setPasswordError(passErr);
+
+            // User friendly toast message
+            Toast.show({
+                type: 'error',
+                text1: 'Validation Error',
+                text2: 'Please check your email and password.',
+                visibilityTime: 3000,
+            });
             return;
         }
         try {
             showLoader();
             await login(email, password);
+
+            Toast.show({
+                type: 'success',
+                text1: 'Success!',
+                text2: 'Logged in successfully.',
+            });
+
             router.replace("/home");
         } catch (error) {
             console.error(error);
-            Alert.alert("Login Failed");
+
+            Toast.show({
+                type: 'error',
+                text1: 'Login Failed',
+                text2: 'Invalid credentials or network issue. Try again.',
+                visibilityTime: 4000,
+            });
         } finally {
             hideLoader();
         }
@@ -90,18 +124,27 @@ export default function Login() {
                                         alignItems: 'center',
                                         paddingHorizontal: 20
                                     }}>
-                                        <Ionicons name="mail-outline" size={22} color="#71717A" />
+                                        <Ionicons
+                                            name="mail-outline"
+                                            size={22}
+                                            color={emailError ? '#FF4444' : (focusedInput === 'email' ? "#B4F05F" : "#71717A")}
+                                        />
                                         <TextInput
                                             style={{ flex: 1, color: '#FFFFFF', fontSize: 16, marginLeft: 12 }}
                                             placeholder="name@example.com"
                                             placeholderTextColor="#52525B"
                                             value={email}
-                                            onChangeText={setEmail}
+                                            onChangeText={(text) => {
+                                                setEmail(text);
+                                                if(emailError) setEmailError(null); // clear error when typing
+                                            }}
                                             onFocus={() => setFocusedInput('email')}
                                             onBlur={() => setFocusedInput(null)}
                                             autoCapitalize="none"
+                                            keyboardType="email-address"
                                         />
                                     </View>
+                                    {emailError && <Text style={{ color: '#FF4444', fontSize: 12, marginTop: 4, marginLeft: 8 }}>{emailError}</Text>}
                                 </View>
 
                                 <View>
@@ -113,19 +156,26 @@ export default function Login() {
                                         backgroundColor: '#1A1A1A',
                                         borderRadius: 20,
                                         borderWidth: 1.5,
-                                        borderColor: focusedInput === 'password' ? '#B4F05F' : '#2A2A2A',
+                                        borderColor: focusedInput === 'email' ? '#B4F05F' : '#2A2A2A',
                                         flexDirection: 'row',
                                         alignItems: 'center',
                                         paddingHorizontal: 20
                                     }}>
-                                        <Ionicons name="lock-closed-outline" size={22} color="#71717A" />
+                                        <Ionicons
+                                            name="lock-closed-outline"
+                                            size={22}
+                                            color={passwordError ? '#FF4444' : (focusedInput === 'password' ? "#B4F05F" : "#71717A")}
+                                        />
                                         <TextInput
                                             style={{ flex: 1, color: '#FFFFFF', fontSize: 16, marginLeft: 12 }}
                                             placeholder="Your password"
                                             placeholderTextColor="#52525B"
                                             secureTextEntry={!showPassword}
                                             value={password}
-                                            onChangeText={setPassword}
+                                            onChangeText={(text) => {
+                                                setPassword(text);
+                                                if(passwordError) setPasswordError(null);
+                                            }}
                                             onFocus={() => setFocusedInput('password')}
                                             onBlur={() => setFocusedInput(null)}
                                         />
@@ -133,11 +183,14 @@ export default function Login() {
                                             <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#71717A" />
                                         </TouchableOpacity>
                                     </View>
+                                    {passwordError && <Text style={{ color: '#FF4444', fontSize: 12, marginTop: 4, marginLeft: 8 }}>{passwordError}</Text>}
                                 </View>
                             </View>
 
                             {/* Forgot Password */}
-                            <TouchableOpacity style={{ alignSelf: 'flex-end', marginTop: 16 }}>
+                            <TouchableOpacity
+                                onPress={() => router.push('/forgot-password')}
+                                style={{ alignSelf: 'flex-end', marginTop: 16 }}>
                                 <Text style={{ color: '#B4F05F', fontSize: 14, fontWeight: '700' }}>
                                     Forgot password?
                                 </Text>

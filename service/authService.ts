@@ -1,5 +1,11 @@
 import { auth, db } from "./firebase"
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "@firebase/auth";
+import {
+    createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
+    signInWithEmailAndPassword,
+    signOut,
+    updateProfile
+} from "@firebase/auth";
 import { doc, getDoc, setDoc } from "@firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -24,6 +30,15 @@ export const register = async (fullName: string, email: string, password: string
     return userCred.user
 
 }
+
+export const resetPassword = async (email: string) => {
+    try {
+        await sendPasswordResetEmail(auth, email);
+        return { success: true };
+    } catch (error: any) {
+        throw error;
+    }
+};
 
 export const checkUserVerification = async (uid: string) => {
     try {
