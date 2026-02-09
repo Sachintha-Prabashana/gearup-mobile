@@ -10,8 +10,6 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square)
 ![Expo](https://img.shields.io/badge/Expo-54.0-black?style=flat-square)
 
-**[Live Demo](#) • [Documentation](#) • [API Docs](#) • [Report Bug](#) • [Request Feature](#)**
-
 </div>
 
 ---
