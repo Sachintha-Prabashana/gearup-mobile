@@ -59,8 +59,8 @@ Get GearUp running in 3 steps:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/GearUp.git
-cd GearUp
+git clone https://github.com/Sachintha-Prabashana/gearup-mobile.git
+cd gearup-mobile
 
 # 2. Install dependencies
 npm install
@@ -89,20 +89,20 @@ Then press:
 
 #### Using HTTPS (Recommended for beginners):
 ```bash
-git clone https://github.com/yourusername/GearUp.git
-cd GearUp
+git clone https://github.com/Sachintha-Prabashana/gearup-mobile.git
+cd gearup-mobile
 ```
 
 #### Using SSH (For SSH key setup):
 ```bash
-git clone git@github.com:yourusername/GearUp.git
-cd GearUp
+git clone git@github.com:Sachintha-Prabashana/gearup-mobile.git
+cd gearup-mobile
 ```
 
 #### Using GitHub CLI:
 ```bash
-gh repo clone yourusername/GearUp
-cd GearUp
+gh repo clone Sachintha-Prabashana/gearup-mobile
+cd gearup-mobile
 ```
 
 ### Step 2: Install Dependencies
