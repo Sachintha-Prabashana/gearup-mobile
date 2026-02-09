@@ -1,43 +1,147 @@
-# GearUp 📷 - Professional Equipment Rental Platform
+# 📷 GearUp - Professional Equipment Rental Platform
 
-A cutting-edge mobile application for renting professional photography, videography, and content creation equipment. Built with React Native and Expo, GearUp connects equipment owners with creators who need high-quality gear.
+> **A cutting-edge mobile application for renting professional photography, videography, and content creation equipment.** Built with React Native and Expo, GearUp connects equipment owners with creators who need high-quality gear.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Platform](https://img.shields.io/badge/platform-React%20Native-orange)
+<div align="center">
 
----
+![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-React%20Native-orange?style=flat-square)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square)
+![Expo](https://img.shields.io/badge/Expo-54.0-black?style=flat-square)
 
-## 📋 Table of Contents
+**[Live Demo](#) • [Documentation](#) • [API Docs](#) • [Report Bug](#) • [Request Feature](#)**
 
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-- [Available Scripts](#available-scripts)
-- [Environment Variables](#environment-variables)
-- [Key Features Breakdown](#key-features-breakdown)
-- [Architecture](#architecture)
-- [Contributing](#contributing)
-- [License](#license)
-- [Support](#support)
+</div>
 
 ---
 
-## 🎯 Overview
+## 🗂️ Table of Contents
+
+- [✨ Features](#-features)
+- [🛠️ Tech Stack](#%EF%B8%8F-tech-stack)
+- [📦 Quick Start](#-quick-start)
+- [🚀 Installation & Setup](#-installation--setup)
+- [📁 Project Structure](#-project-structure)
+- [🏗️ Architecture](#%EF%B8%8F-architecture)
+- [🔐 Environment Variables](#-environment-variables)
+- [🎯 Key Features Breakdown](#-key-features-breakdown)
+- [🛠️ Build Features](#%EF%B8%8F-build-features)
+- [📱 Platform Support](#-platform-support)
+- [🔗 Related Repositories](#-related-repositories)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [💬 Support & Contact](#-support--contact)
+
+---
+
+## 💡 About GearUp
 
 **GearUp** is a comprehensive mobile rental platform designed for professional photographers, videographers, and content creators. The app provides a seamless experience for browsing, booking, and managing equipment rentals with features like real-time availability, secure payment processing, ID verification, and location-based services.
 
-### Key Highlights:
+### 🎯 Mission
+To democratize access to professional-grade equipment by connecting creators with affordable, reliable rental options.
+
+### ✅ What Makes GearUp Special
 - 🏆 Professional-grade equipment catalog
-- 💳 Secure Stripe payment integration
+- 💳 Secure Stripe payment integration  
 - 📍 Location-based store discovery
-- ✅ ID verification system
-- ⭐ Ratings and reviews system
-- 📱 Cross-platform (iOS, Android, Web)
-- 🔒 Firebase authentication and database
+- ✅ Blockchain-ready ID verification
+- ⭐ Community ratings and reviews
+- 📱 Native cross-platform experience
+- 🔒 Enterprise-grade security
+
+---
+
+## 📦 Quick Start
+
+Get GearUp running in 3 steps:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/yourusername/GearUp.git
+cd GearUp
+
+# 2. Install dependencies
+npm install
+
+# 3. Start development server
+npm start
+```
+
+Then press:
+- **`a`** for Android Emulator
+- **`i`** for iOS Simulator  
+- **`w`** for Web Browser
+- **`j`** for Flipper debugger
+
+---
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+- **Node.js** v18+ and npm
+- **Expo CLI**: `npm install -g expo-cli`
+- **Git** for version control
+- **Android Studio** (for Android) or **Xcode** (for iOS)
+
+### Step 1: Clone the Repository
+
+#### Using HTTPS (Recommended for beginners):
+```bash
+git clone https://github.com/yourusername/GearUp.git
+cd GearUp
+```
+
+#### Using SSH (For SSH key setup):
+```bash
+git clone git@github.com:yourusername/GearUp.git
+cd GearUp
+```
+
+#### Using GitHub CLI:
+```bash
+gh repo clone yourusername/GearUp
+cd GearUp
+```
+
+### Step 2: Install Dependencies
+```bash
+npm install
+# or
+yarn install
+```
+
+### Step 3: Configure Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```env
+# Firebase Configuration
+EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# Stripe Configuration
+STRIPE_PUBLISHABLE_KEY=your_stripe_public_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
+
+# Google Maps API Key
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+```
+
+> ⚠️ **Security**: Add `.env.local` to `.gitignore` and never commit secrets!
+
+### Step 4: Start Development Server
+
+```bash
+npm start
+```
+
+Follow the prompts to run on your desired platform.
 
 ---
 
@@ -251,105 +355,43 @@ GearUp/
 
 ---
 
-## 📦 Installation
-
-### Prerequisites
-- **Node.js** (v18 or higher) and npm
-- **Expo CLI** (`npm install -g expo-cli`)
-- **Android Studio** (for Android development) or **Xcode** (for iOS)
-- **Git** for version control
-
-### Step 1: Clone the Repository
-```bash
-git clone <repository-url>
-cd GearUp
-```
-
-### Step 2: Install Dependencies
-```bash
-npm install
-```
-
-### Step 3: Configure Environment Variables
-Create a `.env.local` file in the root directory and add your Firebase credentials:
-```env
-EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
-```
-
-### Step 4: Start Development Server
-```bash
-npm start
-```
-
----
-
-## 🚀 Getting Started
-
-After installation, you can run GearUp on different platforms:
-
-### Run on Android Emulator
-```bash
-npm run android
-```
-
-### Run on iOS Simulator (macOS only)
-```bash
-npm run ios
-```
-
-### Run on Web Browser
-```bash
-npm run web
-```
-
-### Run with Expo Go (Fastest for Development)
-When you run `npm start`, follow the prompts to open in:
-- **Expo Go app** (available on iOS App Store and Google Play)
-- **Android Emulator**
-- **iOS Simulator**
-- **Web Browser**
-
----
-
 ## 📝 Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm start` | Start the Expo development server |
-| `npm run android` | Build and run on Android |
-| `npm run ios` | Build and run on iOS |
-| `npm run web` | Start web development server |
-| `npm run lint` | Run ESLint to check code quality |
-| `npm run reset-project` | Reset project to clean state |
+| Script | Description | Platform |
+|--------|-------------|----------|
+| `npm start` | Start Expo dev server | All |
+| `npm run android` | Build and run on Android | Android |
+| `npm run ios` | Build and run on iOS | macOS only |
+| `npm run web` | Start web dev server | Web |
+| `npm run lint` | Run ESLint | All |
+| `npm run build:android` | Create production APK | Android |
+| `npm run build:ios` | Create production IPA | iOS |
 
 ---
 
 ## 🔐 Environment Variables
 
-Create a `.env.local` file with the following variables:
-
+### Firebase Configuration
+Get these from your Firebase Console:
 ```env
-# Firebase Configuration
 EXPO_PUBLIC_FIREBASE_API_KEY=
 EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
 EXPO_PUBLIC_FIREBASE_PROJECT_ID=
 EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 EXPO_PUBLIC_FIREBASE_APP_ID=
-
-# Stripe Configuration (if applicable)
-STRIPE_PUBLISHABLE_KEY=
-
-# Google Maps API Key (configured in app.json)
-GOOGLE_MAPS_API_KEY=
 ```
 
-> **Security Note**: Never commit `.env.local` to version control. Add it to `.gitignore`.
+### Payment Services
+```env
+STRIPE_PUBLISHABLE_KEY=pk_live_...
+STRIPE_SECRET_KEY=sk_live_...
+```
+
+### Maps & Location
+```env
+GOOGLE_MAPS_API_KEY=AIza...
+```
 
 ---
 
@@ -472,11 +514,68 @@ Business logic is separated into services:
 
 ---
 
-## 🐛 Known Issues & Limitations
+## 🛠️ Build Features
 
-- iOS app requires macOS for local development
-- Some features require user location permissions
-- Notification permissions must be granted manually on devices
+### Development Build Features
+- 🔥 **Hot Reload**: Instant code updates during development
+- 🐛 **Debug Mode**: Enhanced logging and error reporting
+- 🎨 **Tailwind CSS**: Real-time style updates
+- 📱 **Expo Go**: Preview on physical devices instantly
+- 🔍 **Flipper Integration**: Advanced debugging and inspection
+
+### Production Build Features
+- 📦 **Optimized Bundles**: Minified and tree-shaken code
+- 🚀 **OTA Updates**: Over-the-air app updates without app store resubmission
+- 📊 **EAS Build**: Managed cloud builds for iOS and Android
+- 🔐 **Code Signing**: Automatic certificate management
+- 📈 **Performance Optimization**: Lazy loading and code splitting
+- 🔔 **Push Notifications**: Server-side push notification delivery
+- 📍 **Native Modules**: Access to native device features
+
+### Build Configuration Files
+- `eas.json` - EAS Build configuration for cloud builds
+- `metro.config.js` - Metro bundler configuration
+- `babel.config.js` - Babel transpilation settings
+- `tailwind.config.js` - Tailwind CSS customization
+- `tsconfig.json` - TypeScript compiler options
+
+### Build Commands
+```bash
+# Development builds
+npm start                    # Start dev server
+
+# Production builds with EAS
+eas build --platform android # Build Android APK/AAB
+eas build --platform ios     # Build iOS IPA
+eas build --platform all     # Build both platforms
+
+# Local builds
+npm run build:android        # Local Android build
+npm run build:ios           # Local iOS build
+
+# Clean builds
+npm run reset-project       # Reset project state
+```
+
+---
+
+## 🔗 Related Repositories
+
+### Backend Services
+- **[GearUp Backend API](https://github.com/yourusername/gearup-backend)** - Node.js/Express server for user management and business logic
+- **[GearUp Stripe Backend](https://github.com/yourusername/gearup-stripe-backend)** - Dedicated Stripe payment processing server
+  - Handles payment intents and webhook processing
+  - Manages subscription and recurring billing
+  - Secure PCI-compliant payment handling
+  - Rate limiting and fraud detection
+
+### Database & Infrastructure
+- **[GearUp Firebase Config](https://github.com/yourusername/gearup-firebase)** - Firebase Firestore schema and cloud functions
+- **[GearUp Admin Dashboard](https://github.com/yourusername/gearup-admin)** - Admin panel for content management
+
+### Documentation
+- **[API Documentation](https://github.com/yourusername/gearup-api-docs)** - Complete API reference
+- **[Architecture Guide](https://github.com/yourusername/gearup-docs)** - Detailed architecture documentation
 
 ---
 
@@ -504,12 +603,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-## 🤝 Support
+## 💬 Support & Contact
 
 For support, please:
-- Create an issue on the GitHub repository
-- Contact the development team
-- Check existing documentation and FAQs
+- 📧 Create an issue on the GitHub repository
+- 💬 Contact the development team
+- 📚 Check existing documentation and FAQs
+- 🐛 Report bugs with detailed information
 
 ---
 
@@ -518,24 +618,34 @@ For support, please:
 **Developer**: Sachintha  
 **Project**: GearUp Equipment Rental Platform  
 **Version**: 1.0.0  
-**Last Updated**: February 2026
+**Last Updated**: February 2026  
+**License**: MIT
 
-### Technologies Used:
+### Technologies & Partners
 - Expo & React Native community
 - Firebase team
 - Stripe payment platform
+- Google Maps & Location Services
 - All open-source contributors
 
 ---
 
 ## 🙏 Acknowledgments
 
-- Expo team for the amazing framework
-- React Native community for incredible libraries
-- Firebase for robust backend services
-- All contributors and testers
+- **Expo Team** - Amazing framework and infrastructure
+- **React Native Community** - Incredible libraries and tools
+- **Firebase** - Robust backend services
+- **All Contributors** - For making this project possible
 
 ---
 
-**Happy coding! 🚀**
+<div align="center">
+
+### Made with ❤️ by the GearUp Team
+
+⭐ If you find this project helpful, please give it a star!
+
+**[Back to top](#-gearup---professional-equipment-rental-platform)**
+
+</div>
 
